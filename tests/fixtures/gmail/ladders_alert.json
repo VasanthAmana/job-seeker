@@ -1,0 +1,30 @@
+{
+  "id": "18f2a3",
+  "threadId": "t18f2a3",
+  "internalDate": "1762000000000",
+  "payload": {
+    "mimeType": "multipart/alternative",
+    "headers": [
+      {
+        "name": "From",
+        "value": "The Ladders <alerts@theladders.com>"
+      },
+      {
+        "name": "Subject",
+        "value": "Your job matches for this week"
+      },
+      {
+        "name": "Date",
+        "value": "Sat, 1 Nov 2026 11:00:00 +0000"
+      }
+    ],
+    "parts": [
+      {
+        "mimeType": "text/plain",
+        "body": {
+          "data": "VGhlIExhZGRlcnMgLSB5b3VyIGpvYiBtYXRjaGVzCgpEaXJlY3RvciwgQnVzaW5lc3MgVHJhbnNmb3JtYXRpb24gLSBVbWJyZWxsYSBDb3JwLCBSZW1vdGUKaHR0cHM6Ly93d3cudGhlbGFkZGVycy5jb20vam9iL2RpcmVjdG9yLWJ1c2luZXNzLXRyYW5zZm9ybWF0aW9uLXVtYnJlbGxhLWNvcnAvODEyMzQ1NjcKClRvIHN0b3AgdGhlc2UgZW1haWxzIHZpc2l0IGh0dHBzOi8vd3d3LnRoZWxhZGRlcnMuY29tL21lbWJlci9wcmVmZXJlbmNlcwo"
+        }
+      }
+    ]
+  }
+}
