@@ -1,0 +1,10 @@
+date,company,sector,role,role_type,channel,status,contact_person,fit_rating,notes,cv_file,cover_letter_file,source,deadline
+2026-10-20,Acme <Corp>,Finance,VP AI & Strategy,vp,online,applied,,,"Sent & waiting ""quietly""",,,https://example.com/job/1,
+2026-10-30,Beta Inc,Health,Director AI,director,referral,applied,,,,,,linkedin,2026-11-05
+2026-10-01,Gamma,Finance,Head of AI,director,online,interview,,,,,,email,
+2026-09-15,Delta,Retail,VP Data,vp,online,rejected,,,,,,indeed,
+2026-09-10,Eps,Retail,Director ML,director,online,withdrawn,,,,,,indeed,
+2026-08-01,Zeta,Health,CAIO,vp,portal,hired,,,,,,employer,
+2026-10-31,Eta,Health,Director,director,online,drafted,,,,,,,2026-11-03
+2026-10-02,Theta,Tech,VP,vp,online,mystery,,,,,,,
+2025,Iota,Tech,Old row,director,online,applied

@@ -250,6 +250,18 @@ def notion_sync_tool(min_score: float | None = None, all: bool | None = None, re
         raise ToolError(str(exc)) from exc
 
 
+def dashboard(open: bool = False) -> dict:
+    """Regenerate the offline HTML dashboard and return its path (opens it
+    with the platform default when `open` is true). Writes only the
+    dashboard file; see jobseek/dashboard/."""
+    if str(JOBSEEK_ROOT) not in sys.path:
+        sys.path.insert(0, str(JOBSEEK_ROOT))
+    from dashboard import build_dashboard
+
+    path = build_dashboard(open_browser=bool(open))
+    return {"path": str(path), "opened": bool(open)}
+
+
 # name -> (callable, JSON Schema for its arguments)
 TOOLS = {
     "run_alerts": (
@@ -361,6 +373,14 @@ TOOLS = {
             "additionalProperties": False,
         },
     ),
+    "dashboard": (
+        dashboard,
+        {
+            "type": "object",
+            "properties": {"open": {"type": "boolean", "description": "also open the file with the platform default app (default false)"}},
+            "additionalProperties": False,
+        },
+    ),
 }
 
 
@@ -375,6 +395,7 @@ TOOL_DESCRIPTIONS = {
     "linkedin_search": "Run a live LinkedIn Jobs search through the signed-in linkedin-mcp app; raises a clear \"LinkedIn needs you\" error if the app isn't running or signed in.",
     "get_job": "Fetch one full LinkedIn job posting by id or URL via the signed-in linkedin-mcp app (outreach/ad-hoc use; passthrough to jobseek/linkedin).",
     "search_people": "LinkedIn people search (recruiter/hiring-manager outreach prep) via the signed-in linkedin-mcp app; read-only, no connect/message/follow.",
+    "dashboard": "Regenerate the offline HTML pipeline dashboard (tracker + ranked postings) and return its file path.",
 }
 
 

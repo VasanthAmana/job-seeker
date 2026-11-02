@@ -67,7 +67,7 @@ def ranked_entry(title, company, url, score, **extra):
 def test_tool_registry_has_exactly_the_required_tools():
     assert set(mcp_tools.TOOLS) == {
         "run_alerts", "rank", "list_shortlist", "get_posting", "search_seen", "tailor",
-        "notion_sync", "linkedin_search", "get_job", "search_people",
+        "notion_sync", "linkedin_search", "get_job", "search_people", "dashboard",
     }
 
 
