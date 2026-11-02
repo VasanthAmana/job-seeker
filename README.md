@@ -157,7 +157,7 @@ that used to be hardcoded in the tools:
 | `days`, `limit` | Default look-back window and max messages per `gmail_alerts.py alerts` run. |
 | `setup_guide.searches` / `.locations` | The LinkedIn/Indeed/Ladders saved searches and target locations the owner's alert emails are set up against - reference text for keeping the mailbox's filters in sync with the rubric. |
 | `ranking.weights`, `.top_n`, `.candidate_limit` | The domain/leadership/behavioral/career scoring weights, shortlist size, and `rank_state.py candidates` default limit. |
-| `paths.*` | Where `state/seen_jobs.json`, `state/last_run.json` and `tracker.csv` live. |
+| `paths.*` | Where `state/seen_jobs.json`, `state/last_run.json`, `tracker.csv` and the generated `dashboard.html` (optional; default `state/dashboard.html`) live. |
 | `linkedin.saved_searches` | The LinkedIn saved searches `/run-alerts` replays through `jobseek/linkedin/` - each entry's `query`, `locations` (list), `experience_levels`, `remote`, `date_posted`, `job_type`, `limit` mirror LinkedIn's own saved-search UI. Same config file as everything else - no separate LinkedIn config. |
 | `notion.*` | The Notion OAuth account folder, database name/id and parent page for `notion_sync` - see `NOTION_SETUP.md`. |
 
@@ -271,3 +271,11 @@ LinkedIn page HTML under jsdom only; no test touches Gmail, Notion, or live
 LinkedIn - `jobseek/linkedin/client.py`'s and `source.py`'s tests run
 against a fake local socket server standing in for the app, never the app
 itself.
+
+## Dashboard
+
+`dashboard/` renders the tracker and ranked postings as one offline HTML file
+(stage counts, charts, filterable table with scores, flags, sources and
+follow-up/deadline dates; no network fetches). Regenerate on demand with the
+MCP tool `dashboard(open=false)`. Follow-up is due 7 days after an `applied`
+row's full date.

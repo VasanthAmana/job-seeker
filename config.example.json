@@ -45,7 +45,8 @@
     "state_dir": "state",
     "seen_jobs": "state/seen_jobs.json",
     "last_run": "state/last_run.json",
-    "tracker": "tracker.csv"
+    "tracker": "tracker.csv",
+    "dashboard": "state/dashboard.html"
   },
 
   "notion": {
