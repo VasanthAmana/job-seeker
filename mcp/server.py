@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """jobseek MCP server: read-only query access to jobseek's state over stdio.
 
-Exposes seven tools - run_alerts, rank, list_shortlist, get_posting,
-search_seen, tailor, notion_sync - documented in jobseek/mcp/tools.py.
-Transport is the
+Exposes jobseek's state read-only, plus three LinkedIn passthrough tools:
+run_alerts, rank, list_shortlist, get_posting, search_seen, tailor,
+notion_sync, linkedin_search, get_job, search_people - documented in
+jobseek/mcp/tools.py. Transport is the
 MCP stdio protocol: newline-delimited JSON-RPC 2.0 on stdin/stdout, one
 message per line, no embedded newlines. Stdlib only (json, no `mcp` package
 dependency) so it needs nothing installed beyond Python 3.10+ on either

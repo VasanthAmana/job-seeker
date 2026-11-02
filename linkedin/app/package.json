@@ -1,0 +1,54 @@
+{
+  "name": "linkedin-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A personal LinkedIn job-search assistant for Windows and macOS: an Electron app holding your own signed-in LinkedIn session, exposing gentle, read-only search tools over a local MCP endpoint with a stdio relay for Claude Code. Modelled on Zook.",
+  "main": "src/main.js",
+  "bin": {
+    "linkedin-mcp": "bin/linkedin-mcp.js"
+  },
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "build": {
+    "appId": "com.linkedinmcp.app",
+    "productName": "LinkedIn MCP",
+    "files": [
+      "src/**",
+      "bin/**",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0",
+    "jsdom": "^26.1.0"
+  }
+}

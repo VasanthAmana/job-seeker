@@ -15,20 +15,28 @@ workflow.
    messages. Nothing in jobseek sends, modifies, labels, or deletes email.
    There is no app-password/IMAP fallback: if the OAuth sign-in cannot read,
    stop and say so.
-3. **Never invent.** Scoring, ranking reasons, and any later tailoring use
+3. **LinkedIn access is read-only for job search.** `jobseek/linkedin/`
+   only searches, lists and reads (via the vendored `linkedin/app` Electron
+   app's own signed-in session). It never types a password, OTP or 2FA
+   code, and never answers a security challenge - a "LinkedIn needs you"
+   error means a human finishes that step in the app window, never a code
+   path around it. The app's one write (`linkedin_save_job`, not exposed
+   through jobseek's MCP) is out of scope here.
+4. **Never invent.** Scoring, ranking reasons, and any later tailoring use
    only `profile/candidate-profile.md`, the master resume, and facts the owner
    confirmed in writing. Gaps are stated, not smoothed over.
-4. **Personal data stays out of git.** `state/`, `applications/`,
+5. **Personal data stays out of git.** `state/`, `applications/`,
    `tracker.csv`, `resume/`, `salary_data.json` and credentials are gitignored
    (see `.gitignore`). Do not commit them, do not paste their contents into
    committed files.
-5. **Nothing is sent.** Outreach notes and follow-ups are drafts for the
+6. **Nothing is sent.** Outreach notes and follow-ups are drafts for the
    owner to send himself.
 
 ## Workflow pointers
 
-- "run alerts" -> `../../.claude/commands/run-alerts.md` (ingest Gmail alerts,
-  dedupe, fetch + integrity-gate, rank, top-5 shortlist).
+- "run alerts" -> `../../.claude/commands/run-alerts.md` (ingest Gmail alerts
+  and LinkedIn saved searches, dedupe, fetch + integrity-gate, rank, top-5
+  shortlist).
 - State moves through `tools/alert_state.py` and `tools/rank_state.py`, never
   through the conversation: `state/seen_jobs.json` is append-only and grows
   for the life of the search.
