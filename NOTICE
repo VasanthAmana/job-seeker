@@ -1,8 +1,9 @@
 NOTICE - third-party components in jobseek/
 
-Components in this directory tree are copied from or adapted from
-ai-job-search (https://github.com/lorentzen/ai-job-search), licensed under
-the MIT License:
+The files listed below are copied from, or adapted from, ai-job-search
+(https://github.com/lorentzen/ai-job-search; Copyright (c) 2026 Mads
+Lorentzen), licensed under the MIT
+License:
 
 MIT License
 
@@ -26,22 +27,53 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Copied or adapted components (jobseek/tailor/):
+## Copied verbatim
 
-  - tailor/tools/posting_guard.py  - copied verbatim from ai-job-search
-    tools/posting_guard.py (posting integrity gate)
-  - tailor/tools/page_decode.py    - copied verbatim from ai-job-search
-    tools/page_decode.py (dependency of posting_guard.py)
-  - tailor/tailor.md               - adapted from ai-job-search
-    .claude/commands/apply.md (drafter-reviewer workflow, never-invent
-    standing rule, grounding audit, ATS keyword check, relevance-weighted
-    cutting; LaTeX compile loop replaced by Markdown + pandoc export, cover
-    letter replaced by the 3-line "why me" outreach note)
-  - tailor/agents/resume-reviewer.md - adapted from ai-job-search
-    .claude/agents/application-reviewer.md (read-only reviewer subagent)
-  - tailor/tailor.md and tailor/README.md also incorporate guidance text
-    from ai-job-search .claude/skills/job-application-assistant/
-    03-writing-style.md, 05-cv-templates.md and 08-application-forms.md.
+- `tools/job_key.py` - canonical dedupe keys for postings
+- `tools/page_decode.py` - charset-aware decoding of saved pages
+- `tools/robots_check.py` - robots.txt gate (RFC 9309, fail-closed)
+- `tools/fetch_page.py` - browser-header GET retry (GET-only, robots-enforced, bounded)
+- `tools/posting_guard.py` - integrity gate for untrusted posting text
+- `tailor/tools/posting_guard.py` - copied verbatim from ai-job-search
+  tools/posting_guard.py (posting integrity gate, tailor's own copy)
+- `tailor/tools/page_decode.py` - copied verbatim from ai-job-search
+  tools/page_decode.py (dependency of posting_guard.py, tailor's own copy)
 
-ai-job-search's portal CLIs derive from Mikkel Krogholm's skills repo
-(acknowledged in its README); none of those are copied here.
+## Adapted
+
+- `tools/alert_state.py` - from `tools/scrape_state.py` (dedupe candidates /
+  atomic store), rebased on alert-email ingest (URL-only candidates)
+- `tools/rank_state.py` - from `tools/rank_state.py` (ranking state machine),
+  rebased on the jobseek layout and the Director/VP rubric (seniority gate,
+  engineering-role flag, 1-10 score, one-line reason)
+- `profile/candidate-profile.md` - from
+  `.claude/skills/job-application-assistant/01-candidate-profile.md` (template structure)
+- `profile/job-evaluation.md` - from
+  `.claude/skills/job-application-assistant/04-job-evaluation.md` (gates,
+  weighted dimensions, verdict bands), specialized for Director/VP AI strategy
+- `profile/writing-style.md` - from
+  `.claude/skills/job-application-assistant/03-writing-style.md` (never-invent
+  discipline, tone rules)
+- `.claude/agents/posting-scorer.md` - from `.claude/agents/posting-scorer.md`
+  (read-only scoring agent pattern), minus the portal-CLI escalation
+- `.claude/commands/run-alerts.md` - from `.claude/commands/rank.md` (batch
+  scoring flow, trust rules, state-through-tools rule), with Gmail alert
+  ingest replacing the portal scrape
+- `tailor/tailor.md` - adapted from ai-job-search .claude/commands/apply.md
+  (drafter-reviewer workflow, never-invent standing rule, grounding audit,
+  ATS keyword check, relevance-weighted cutting; LaTeX compile loop replaced
+  by Markdown + pandoc export, cover letter replaced by the 3-line "why me"
+  outreach note)
+- `tailor/agents/resume-reviewer.md` - adapted from ai-job-search
+  .claude/agents/application-reviewer.md (read-only reviewer subagent)
+- `tailor/tailor.md` and `tailor/README.md` also incorporate guidance text
+  from ai-job-search .claude/skills/job-application-assistant/
+  03-writing-style.md, 05-cv-templates.md and 08-application-forms.md
+
+The portal CLIs in ai-job-search derive from Mikkel Krogholm's skills repo
+(acknowledged in its README); none of them are copied here.
+
+## Written new for jobseek
+
+- `tools/gmail_alerts.py` - read-only Gmail alert reading and link extraction
+- `jobseek/README.md`, `jobseek/CLAUDE.md`, `alert-sources.json`, tests and fixtures

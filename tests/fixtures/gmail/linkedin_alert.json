@@ -1,0 +1,30 @@
+{
+  "id": "18f2a1",
+  "threadId": "t18f2a1",
+  "internalDate": "1762000000000",
+  "payload": {
+    "mimeType": "multipart/alternative",
+    "headers": [
+      {
+        "name": "From",
+        "value": "LinkedIn Job Alerts <jobs-noreply@linkedin.com>"
+      },
+      {
+        "name": "Subject",
+        "value": "Director, AI Strategy and more jobs for you"
+      },
+      {
+        "name": "Date",
+        "value": "Sat, 1 Nov 2026 09:00:00 +0000"
+      }
+    ],
+    "parts": [
+      {
+        "mimeType": "text/html",
+        "body": {
+          "data": "PGh0bWw-PGJvZHk-CjxoMT5MaW5rZWRJbiBKb2IgQWxlcnRzPC9oMT4KPHA-TmV3IGpvYnMgZm9yICJBSSBzdHJhdGVneSIgaW4gRGVudmVyIE1ldHJvcG9saXRhbiBBcmVhPC9wPgo8YSBocmVmPSJodHRwczovL3d3dy5saW5rZWRpbi5jb20vY29tbS9qb2JzL3ZpZXcvMzk4NzY1NDMyMSI-RGlyZWN0b3IsIEFJIFN0cmF0ZWd5PC9hPgo8cD5BY21lIEZpbmFuY2lhbCAtIERlbnZlciwgQ088L3A-CjxhIGhyZWY9Imh0dHBzOi8vd3d3LmxpbmtlZGluLmNvbS9jb21tL2pvYnMvdmlldy8zOTg3NjU0MzIyIj5WUCwgRGlnaXRhbCBUcmFuc2Zvcm1hdGlvbjwvYT4KPHA-R2xvYmV4IENvcnAgLSBSZW1vdGU8L3A-CjxhIGhyZWY9Imh0dHBzOi8vd3d3LmxpbmtlZGluLmNvbS9jb21tL2pvYnMvdmlldy8zOTg3NjU0MzIxIj5EaXJlY3RvciwgQUkgU3RyYXRlZ3k8L2E-Cjxoci8-CjxhIGhyZWY9Imh0dHBzOi8vd3d3LmxpbmtlZGluLmNvbS9jb21tL2pvYnMvP3Vuc3Vic2NyaWJlVG9rZW49YWJjIj5VbnN1YnNjcmliZTwvYT4KPGEgaHJlZj0iaHR0cHM6Ly93d3cubGlua2VkaW4uY29tL2hlbHAvbGlua2VkaW4vYW5zd2VyL2ExMzM5Ij5IZWxwPC9hPgo8L2JvZHk-PC9odG1sPg"
+        }
+      }
+    ]
+  }
+}

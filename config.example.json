@@ -1,0 +1,50 @@
+{
+  "_comment": "Copy this file to config.json (gitignored) and fill in real values. CLI flags always override whatever is set here.",
+
+  "accounts": [
+    {
+      "name": "personal",
+      "account_dir": "~/.gmail-mcp/personal"
+    },
+    {
+      "name": "jobsearch",
+      "account_dir": "~/.gmail-mcp/jobsearch"
+    }
+  ],
+  "default_account": "personal",
+
+  "alert_sources": "alert-sources.json",
+
+  "days": 7,
+  "limit": 50,
+
+  "setup_guide": {
+    "searches": [
+      "LinkedIn saved search: Director/VP AI Strategy, Denver CO + Remote (US)",
+      "Indeed saved search: VP Artificial Intelligence Strategy",
+      "Ladders saved search: Director/VP AI, Machine Learning Strategy"
+    ],
+    "locations": [
+      "Denver, CO metro",
+      "US-remote"
+    ]
+  },
+
+  "ranking": {
+    "weights": {
+      "domain": 0.30,
+      "leadership": 0.25,
+      "behavioral": 0.15,
+      "career": 0.30
+    },
+    "top_n": 5,
+    "candidate_limit": 10
+  },
+
+  "paths": {
+    "state_dir": "state",
+    "seen_jobs": "state/seen_jobs.json",
+    "last_run": "state/last_run.json",
+    "tracker": "tracker.csv"
+  }
+}
