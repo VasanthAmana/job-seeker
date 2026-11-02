@@ -51,9 +51,11 @@ from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import config as jobseek_config  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_ACCOUNT_DIR = "~/.gmail-mcp/personal"
-DEFAULT_CONFIG = ROOT / "alert-sources.json"
+DEFAULT_CONFIG = ROOT / "alert-sources.json"  # kept for callers/tests that want the built-in default directly
 GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 MAX_MESSAGES = 200
@@ -308,12 +310,27 @@ def _gmail_get(token: str, path: str, params: dict | None = None) -> dict:
         raise RuntimeError(f"Gmail API GET {path} -> HTTP {exc.code}: {detail}") from exc
 
 
-def cmd_alerts(args) -> int:
-    config = load_config(args.config)
-    query = args.query or build_query(config, args.days)
-    token = _access_token(args.account_dir)
+def _resolve_run_settings(args):
+    """Merge jobseek/config.json with this run's CLI flags (flags win)."""
+    jcfg = jobseek_config.load_config(args.jobseek_config)
+    if args.account_dir is not None:
+        account_dir = args.account_dir
+    else:
+        account = jobseek_config.resolve_account(jcfg, args.account)
+        account_dir = jobseek_config.account_dir(account)
+    alert_sources = args.config if args.config is not None else jobseek_config.resolve_alert_sources(jcfg)
+    days = args.days if args.days is not None else jcfg.get("days", 7)
+    limit = args.limit if args.limit is not None else jcfg.get("limit", 50)
+    return account_dir, alert_sources, days, limit
+
+
+def fetch_alerts(account_dir: Path, source_config: dict, query: str, limit: int) -> dict:
+    """The live Gmail read behind `alerts`: used by both the CLI and the MCP
+    server's `run_alerts` tool so there is exactly one code path that ever
+    talks to the Gmail API."""
+    token = _access_token(account_dir)
     messages, page_token = [], None
-    while len(messages) < min(args.limit, MAX_MESSAGES):
+    while len(messages) < min(limit, MAX_MESSAGES):
         params = {"q": query, "maxResults": 50}
         if page_token:
             params["pageToken"] = page_token
@@ -321,23 +338,33 @@ def cmd_alerts(args) -> int:
         batch = page.get("messages") or []
         for stub in batch:
             full = _gmail_get(token, f"messages/{stub['id']}", {"format": "full"})
-            messages.append(record_from_message(full, config))
-            if len(messages) >= min(args.limit, MAX_MESSAGES):
+            messages.append(record_from_message(full, source_config))
+            if len(messages) >= min(limit, MAX_MESSAGES):
                 break
         page_token = page.get("nextPageToken")
         if not page_token or not batch:
             break
-    print(json.dumps({
+    return {
         "query": query,
         "message_count": len(messages),
         "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "messages": messages,
-    }, indent=2, ensure_ascii=False))
+    }
+
+
+def cmd_alerts(args) -> int:
+    account_dir, alert_sources, days, limit = _resolve_run_settings(args)
+    config = load_config(alert_sources)
+    query = args.query or build_query(config, days)
+    result = fetch_alerts(account_dir, config, query, limit)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
 
 
 def cmd_extract(args) -> int:
-    config = load_config(args.config)
+    jcfg = jobseek_config.load_config(args.jobseek_config)
+    alert_sources = args.config if args.config is not None else jobseek_config.resolve_alert_sources(jcfg)
+    config = load_config(alert_sources)
     try:
         message = json.loads(args.message_json.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -360,16 +387,19 @@ def main(argv=None) -> int:
     sub = ap.add_subparsers(dest="command", required=True)
 
     alerts = sub.add_parser("alerts", help="list alert emails and extract posting links (read-only)")
-    alerts.add_argument("--days", type=int, default=7, help="look-back window (default: 7)")
-    alerts.add_argument("--limit", type=int, default=50, help="max messages to read (default: 50)")
-    alerts.add_argument("--account-dir", type=Path, default=Path(DEFAULT_ACCOUNT_DIR))
-    alerts.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    alerts.add_argument("--days", type=int, default=None, help="look-back window (default: from config, else 7)")
+    alerts.add_argument("--limit", type=int, default=None, help="max messages to read (default: from config, else 50)")
+    alerts.add_argument("--account", help="named account from jobseek/config.json (default: config's default_account)")
+    alerts.add_argument("--account-dir", type=Path, default=None, help="overrides --account and the config entirely")
+    alerts.add_argument("--config", type=Path, default=None, help="alert-sources.json path (default: from jobseek config)")
+    alerts.add_argument("--jobseek-config", type=Path, default=None, help="jobseek config.json path (default: jobseek/config.json)")
     alerts.add_argument("--query", help="override the generated Gmail query")
     alerts.set_defaults(func=cmd_alerts)
 
     extract = sub.add_parser("extract", help="offline: extract links from one saved messages.get resource")
     extract.add_argument("--message-json", type=Path, required=True)
-    extract.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    extract.add_argument("--config", type=Path, default=None, help="alert-sources.json path (default: from jobseek config)")
+    extract.add_argument("--jobseek-config", type=Path, default=None)
     extract.set_defaults(func=cmd_extract)
 
     args = ap.parse_args(argv)

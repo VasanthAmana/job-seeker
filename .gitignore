@@ -18,6 +18,10 @@ tailor/output/
 # Salary data (BYO exports; personal)
 salary_data.json
 
+# Real jobseek config: Gmail account folder paths, output locations, etc.
+# Commit only config.example.json (placeholder values).
+config.json
+
 # Company research cache (personal search history)
 company_research/
 

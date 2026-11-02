@@ -41,15 +41,20 @@ from datetime import date, datetime, timedelta, timezone
 from fractions import Fraction
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-STATE = ROOT / "state" / "seen_jobs.json"
-TRACKER = ROOT / "tracker.csv"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import config as jobseek_config  # noqa: E402
 
-# profile/job-evaluation.md
-WEIGHTS = {"domain": 0.30, "leadership": 0.25, "behavioral": 0.15, "career": 0.30}
+ROOT = Path(__file__).resolve().parent.parent
+
+_JOBSEEK_CONFIG = jobseek_config.load_config()
+STATE = jobseek_config.resolve_path(_JOBSEEK_CONFIG, "seen_jobs")
+TRACKER = jobseek_config.resolve_path(_JOBSEEK_CONFIG, "tracker")
+
+# profile/job-evaluation.md; overridable via jobseek/config.json's ranking.weights
+WEIGHTS = jobseek_config.ranking_weights(_JOBSEEK_CONFIG)
 BANDS = ((75, "Strong Fit"), (60, "Good Fit"), (45, "Moderate Fit"), (30, "Weak Fit"), (0, "Poor Fit"))
 
-DEFAULT_LIMIT = 10
+DEFAULT_LIMIT = jobseek_config.candidate_limit(_JOBSEEK_CONFIG)
 URGENT_DAYS = 7
 ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 

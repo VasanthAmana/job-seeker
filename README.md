@@ -31,7 +31,12 @@ jobseek/
 ├── CLAUDE.md               # trust rules and workflow pointers (read first)
 ├── NOTICE                  # MIT attribution for ai-job-search-derived files
 ├── README.md               # this file
+├── config.example.json     # config schema + placeholder values - copy to config.json
+├── config.json             # GITIGNORED: your real Gmail accounts, weights, paths
 ├── alert-sources.json      # which senders/domains/subjects count as job alerts
+├── mcp/
+│   ├── server.py           # stdio MCP server (see "MCP server" below)
+│   └── tools.py            # the six read-only tool implementations
 ├── profile/
 │   ├── candidate-profile.md    # facts only - the never-invent grounding source [owner fills]
 │   ├── job-evaluation.md       # Director/VP rubric: seniority + engineering gates, scoring
@@ -57,14 +62,78 @@ jobseek/
    `[FILL ...]` slots in `profile/job-evaluation.md` and
    `profile/writing-style.md`.
 2. `cp tracker.schema.csv tracker.csv` - the tracker itself is gitignored.
-3. Gmail sign-in: the tools default to `~/.gmail-mcp/personal` (the same
-   OAuth folder other Gmail MCP tools use). The token must carry a read scope
-   (`gmail.modify` counts); the tool refuses to run with a send-only token
-   and never sends anything. If the alerts actually land in a different
-   mailbox, pass `--account-dir ~/.gmail-mcp/<that-folder>` - whichever
-   account receives the alerts is the one to point at.
-4. As employer alert emails arrive, add their sender addresses or ATS hosts to
+3. `cp config.example.json config.json` and fill in your real Gmail account
+   folder(s), look-back window, ranking weights/top-N and output paths - see
+   "Configuration" below. Skipping this step is fine too: every tool falls
+   back to the single-account `~/.gmail-mcp/personal` defaults that shipped
+   before `config.json` existed.
+4. Gmail sign-in: each configured account needs an OAuth folder created by
+   `npx @gongrzhe/server-gmail-autoauth-mcp auth` (e.g. `~/.gmail-mcp/personal`,
+   or a second one like `~/.gmail-mcp/jobsearch` for another mailbox). The
+   token must carry a read scope (`gmail.modify` counts); the tool refuses to
+   run with a send-only token and never sends anything. `--account-dir`
+   (or `--account <name>` from config) still overrides whichever account a
+   one-off run should use.
+5. As employer alert emails arrive, add their sender addresses or ATS hosts to
    `alert-sources.json` so their links classify as `employer`.
+
+## Configuration
+
+`config.json` (gitignored; copy from `config.example.json`) covers everything
+that used to be hardcoded in the tools:
+
+| Key | Covers |
+|---|---|
+| `accounts` | Gmail OAuth folder(s) to read - a list, so several mailboxes (e.g. `~/.gmail-mcp/personal` and a `jobsearch` account) both work. Pick one per run with `--account <name>` or `default_account`. |
+| `alert_sources` | Path to the sender/domain/keyword filter file (`alert-sources.json` by default). |
+| `days`, `limit` | Default look-back window and max messages per `gmail_alerts.py alerts` run. |
+| `setup_guide.searches` / `.locations` | The LinkedIn/Indeed/Ladders saved searches and target locations the owner's alert emails are set up against - reference text for keeping the mailbox's filters in sync with the rubric. |
+| `ranking.weights`, `.top_n`, `.candidate_limit` | The domain/leadership/behavioral/career scoring weights, shortlist size, and `rank_state.py candidates` default limit. |
+| `paths.*` | Where `state/seen_jobs.json`, `state/last_run.json` and `tracker.csv` live. |
+
+**CLI flags always win over `config.json`**, which always wins over the
+built-in defaults - e.g. `gmail_alerts.py alerts --days 14` ignores
+`config.json`'s `days` for that one run. `gmail_alerts.py` also takes an
+explicit `--jobseek-config <path>`; every tool additionally honors the
+`JOBSEEK_CONFIG` environment variable to point at a different config file
+(mainly useful for tests and the MCP server, which both set it rather than
+touching the real `jobseek/config.json`).
+
+## MCP server
+
+`mcp/server.py` is a stdio MCP server exposing jobseek's state read-only, so
+another tool (or a non-Claude-Code client) can query it without going
+through the `/run-alerts` conversation:
+
+- `run_alerts(account?, days?)` - list recent alert email and extracted
+  posting links for one account (Gmail GET-only; does not write state)
+- `rank(top_n?)` - the top-N ranked postings, highest score first
+- `list_shortlist()` - the shortlist from the most recent `/run-alerts` run
+- `get_posting(id)` - one stored posting by its `seen_jobs.json` key
+- `search_seen(query)` - substring search over title/company/reason/location
+- `tailor(job_id)` - grounds `jobseek/tailor`'s workflow on one posting
+  (read-only prep: returns paths and the `/tailor` invocation; the actual
+  drafting still runs as an interactive Claude Code session, since
+  `tailor.md` is a drafter-reviewer workflow, not a deterministic script)
+
+Pure stdlib, no `mcp` package dependency - works the same on Windows and
+macOS. Register it with Claude Code from the repo root:
+
+```bash
+claude mcp add jobseek -- python3 /absolute/path/to/jobseek/mcp/server.py
+```
+
+(On Windows, use the `python` launcher your shell resolves, e.g.
+`py` or `python`, and the Windows-style absolute path.)
+
+Run it directly to smoke-test the stdio protocol:
+
+```bash
+python3 jobseek/mcp/server.py
+```
+
+then paste a line of JSON-RPC, e.g.
+`{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}`.
 
 ## Safety rules (short form - CLAUDE.md has the full list)
 
