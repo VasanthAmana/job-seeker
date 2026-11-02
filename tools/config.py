@@ -45,6 +45,7 @@ DEFAULTS = {
         "seen_jobs": "state/seen_jobs.json",
         "last_run": "state/last_run.json",
         "tracker": "tracker.csv",
+        "upskill_reports": "upskill",
     },
     "notion": {
         "account_dir": "~/.notion-mcp/default",

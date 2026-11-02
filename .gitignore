@@ -15,6 +15,9 @@ state/**
 resume/
 tailor/output/
 
+# Upskill reports (derived from the profile and postings; personal)
+upskill/report-*.md
+
 # Salary data (BYO exports; personal)
 salary_data.json
 

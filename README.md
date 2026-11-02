@@ -31,6 +31,10 @@ it here yet.
 shortlist (or everything, with `--all`) into a "Job Search Pipeline" Notion
 database, one-way - see `NOTION_SETUP.md`.
 
+`upskill` (built in `jobseek/upskill/`) is the cross-search view: a skill-gap
+heatmap over everything tracked and ranked versus the candidate profile, plus
+a prioritized learning plan saved to `jobseek/upskill/report-<date>.md`.
+
 ## Layout
 
 ```
@@ -49,7 +53,7 @@ jobseek/
 │   └── source.py           # run-alerts LinkedIn source: saved searches -> candidate links
 ├── mcp/
 │   ├── server.py           # stdio MCP server (see "MCP server" below)
-│   └── tools.py            # the ten read-only/no-op-safe tool implementations
+│   └── tools.py            # the twelve read-only/no-op-safe tool implementations
 ├── profile/
 │   ├── candidate-profile.md    # facts only - the never-invent grounding source [owner fills]
 │   ├── job-evaluation.md       # Director/VP rubric: seniority + engineering gates, scoring
@@ -64,7 +68,11 @@ jobseek/
 │   ├── posting_guard.py    # integrity gate for untrusted posting text
 │   ├── page_decode.py      # charset-aware page decoding
 │   ├── notion_sync.py      # one-way shortlist/tracker -> Notion sync (filtering + create/update logic)
-│   └── notion_client.py    # Notion REST client, OAuth token read from an external account folder
+│   ├── notion_client.py    # Notion REST client, OAuth token read from an external account folder
+│   └── upskill_state.py    # /upskill merge: tracker + ranked postings, weights, skip counts
+├── upskill/
+│   ├── upskill.md          # /upskill: skill-gap heatmap + learning plan command
+│   └── report-*.md         # GITIGNORED: learning-plan reports (personal output)
 ├── state/                  # GITIGNORED: seen_jobs.json, last run output
 ├── applications/           # GITIGNORED: per-application archive
 ├── tracker.schema.csv      # the tracker columns - copy to tracker.csv to start
@@ -157,7 +165,7 @@ that used to be hardcoded in the tools:
 | `days`, `limit` | Default look-back window and max messages per `gmail_alerts.py alerts` run. |
 | `setup_guide.searches` / `.locations` | The LinkedIn/Indeed/Ladders saved searches and target locations the owner's alert emails are set up against - reference text for keeping the mailbox's filters in sync with the rubric. |
 | `ranking.weights`, `.top_n`, `.candidate_limit` | The domain/leadership/behavioral/career scoring weights, shortlist size, and `rank_state.py candidates` default limit. |
-| `paths.*` | Where `state/seen_jobs.json`, `state/last_run.json`, `tracker.csv` and the generated `dashboard.html` (optional; default `state/dashboard.html`) live. |
+| `paths.*` | Where `state/seen_jobs.json`, `state/last_run.json`, `tracker.csv`, the generated `dashboard.html` (optional; default `state/dashboard.html`) and the `/upskill` report directory live. |
 | `linkedin.saved_searches` | The LinkedIn saved searches `/run-alerts` replays through `jobseek/linkedin/` - each entry's `query`, `locations` (list), `experience_levels`, `remote`, `date_posted`, `job_type`, `limit` mirror LinkedIn's own saved-search UI. Same config file as everything else - no separate LinkedIn config. |
 | `notion.*` | The Notion OAuth account folder, database name/id and parent page for `notion_sync` - see `NOTION_SETUP.md`. |
 
@@ -185,6 +193,10 @@ through the `/run-alerts` conversation:
   (read-only prep: returns paths and the `/tailor` invocation; the actual
   drafting still runs as an interactive Claude Code session, since
   `tailor.md` is a drafter-reviewer workflow, not a deterministic script)
+- `upskill_report()` - the aggregate dataset for `/upskill`: tracker rows
+  merged with ranked postings (deduped, weighted, recorded gaps preferred),
+  profile/report paths and the `/upskill` invocation (read-only prep; the
+  report itself is written by a Claude Code `/upskill` session)
 - `notion_sync(min_score?, all?, rebuild?)` - one-way sync of the ranked
   shortlist (or everything, with `all`) into a "Job Search Pipeline" Notion
   database via the Notion MCP's own OAuth; no Notion token is stored here,

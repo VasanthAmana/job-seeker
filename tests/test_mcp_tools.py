@@ -36,6 +36,7 @@ def jobseek_config_file(tmp_path, monkeypatch):
             "seen_jobs": str(state_dir / "seen_jobs.json"),
             "last_run": str(state_dir / "last_run.json"),
             "tracker": str(tmp_path / "tracker.csv"),
+            "upskill_reports": str(tmp_path / "upskill-reports"),
         },
         "ranking": {"top_n": 2},
     }), encoding="utf-8")
@@ -68,6 +69,7 @@ def test_tool_registry_has_exactly_the_required_tools():
     assert set(mcp_tools.TOOLS) == {
         "run_alerts", "rank", "list_shortlist", "get_posting", "search_seen", "tailor",
         "notion_sync", "linkedin_search", "get_job", "search_people", "dashboard",
+        "upskill_report",
     }
 
 
@@ -95,7 +97,7 @@ def test_tailor_schema_requires_job_id():
 
 
 def test_run_alerts_and_rank_and_shortlist_have_no_required_fields():
-    for name in ("run_alerts", "rank", "list_shortlist"):
+    for name in ("run_alerts", "rank", "list_shortlist", "upskill_report"):
         _func, schema = mcp_tools.TOOLS[name]
         assert "required" not in schema
 
@@ -236,6 +238,43 @@ def test_tailor_returns_paths_and_invoke_without_running_anything(jobseek_config
 def test_tailor_missing_job_raises_tool_error(jobseek_config_file):
     with pytest.raises(mcp_tools.ToolError):
         mcp_tools.tailor("no-such-key")
+
+
+# --- upskill_report: read-only aggregate prep, not report writing ----------
+
+
+UPSKILL_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "upskill"
+
+
+def test_upskill_report_returns_aggregate_payload_and_invoke(jobseek_config_file):
+    cfg_path, state_dir = jobseek_config_file
+    # Point the fixture config at the upskill fixtures (the jobseek_config_file
+    # fixture already isolates paths under tmp_path; reuse its env wiring).
+    import shutil
+    shutil.copy(UPSKILL_FIXTURES / "seen_jobs.json", state_dir / "seen_jobs.json")
+    shutil.copy(UPSKILL_FIXTURES / "tracker.csv", cfg_path.parent / "tracker.csv")
+    result = mcp_tools.upskill_report()
+    assert result["analysed"] == {"tracked": 3, "ranked": 3, "merged_total": 5}
+    assert result["skipped"]["ranked_without_gaps"] == 1
+    assert result["skipped"]["tracker_blank_fit_rating"] == 1
+    acme = next(j for j in result["jobs"] if j["company"] == "Acme")
+    assert acme["sources"] == "both" and acme["weight"] == 0.7
+    assert result["invoke"] == "/upskill"
+    assert result["upskill_command_file"].endswith("upskill.md")
+    assert result["profile"].endswith("candidate-profile.md")
+    assert "report-" in result["report_path"]
+
+
+def test_upskill_report_empty_state_is_zero_counts_not_an_error(jobseek_config_file):
+    result = mcp_tools.upskill_report()
+    assert result["analysed"] == {"tracked": 0, "ranked": 0, "merged_total": 0}
+    assert result["jobs"] == []
+    assert result["previous_report"] is None
+
+
+def test_upskill_report_via_call_tool_dispatch(jobseek_config_file):
+    result = mcp_tools.call_tool("upskill_report", {})
+    assert result["analysed"]["merged_total"] == 0
 
 
 # --- run_alerts: no live Gmail access ---------------------------------------
