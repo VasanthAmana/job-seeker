@@ -1,0 +1,42 @@
+[
+  {
+    "name": "aurora-ledger",
+    "html_url": "https://github.com/dokonkwo/aurora-ledger",
+    "description": "Model-risk ledger for tracking enterprise AI deployments through review.",
+    "language": "Python",
+    "topics": ["ai-governance", "model-risk"],
+    "default_branch": "main",
+    "fork": false,
+    "archived": false
+  },
+  {
+    "name": "governance-playbook",
+    "html_url": "https://github.com/dokonkwo/governance-playbook",
+    "description": "An operating-model playbook for AI steering committees.",
+    "language": null,
+    "topics": [],
+    "default_branch": "main",
+    "fork": false,
+    "archived": false
+  },
+  {
+    "name": "someone-elses-tool",
+    "html_url": "https://github.com/dokonkwo/someone-elses-tool",
+    "description": "Fork of an upstream project, unmodified.",
+    "language": "Go",
+    "topics": [],
+    "default_branch": "main",
+    "fork": true,
+    "archived": false
+  },
+  {
+    "name": "retired-experiment",
+    "html_url": "https://github.com/dokonkwo/retired-experiment",
+    "description": "Archived experiment from 2019.",
+    "language": "R",
+    "topics": [],
+    "default_branch": "master",
+    "fork": false,
+    "archived": true
+  }
+]

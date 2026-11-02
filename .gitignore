@@ -21,6 +21,12 @@ upskill/report-*.md
 # Salary data (BYO exports; personal)
 salary_data.json
 
+# jobseek/expand's proposed profile additions: generated from the owner's
+# public GitHub/Scholar/LinkedIn/press presence, so personal by definition
+# and overwritten on every run. The profile files it proposes against ARE
+# committed; this proposal list is not.
+profile/expand-proposals.md
+
 # Real jobseek config: Gmail account folder paths, output locations, etc.
 # Commit only config.example.json (placeholder values).
 config.json

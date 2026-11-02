@@ -66,10 +66,13 @@ def ranked_entry(title, company, url, score, **extra):
 
 
 def test_tool_registry_has_exactly_the_required_tools():
+    # Equality on purpose: a tool that appears without being listed here is a
+    # tool nobody reviewed. Adding one means adding its name below.
     assert set(mcp_tools.TOOLS) == {
         "run_alerts", "rank", "list_shortlist", "get_posting", "search_seen", "tailor",
         "notion_sync", "linkedin_search", "get_job", "search_people", "dashboard",
         "upskill_report",
+        "expand_profile",
     }
 
 

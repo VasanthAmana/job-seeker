@@ -24,8 +24,9 @@ LinkedIn are one pipeline: same dedupe store, same gates, same ranking.
 Variations: `run alerts --days 14`, `run alerts --rank-only` (skip Gmail,
 re-rank stored postings), `run alerts --limit 20 --top 5`.
 
-`tailor [job]` is a separate step built in `jobseek/tailor/` - do not expect
-it here yet.
+`tailor [job]` is a separate step built in `jobseek/tailor/`, and `expand`
+(proposed profile additions from the owner's public sources) is another in
+`jobseek/expand/` - do not expect either here.
 
 `notion sync` (`.claude/commands/notion-sync.md`) pushes the current
 shortlist (or everything, with `--all`) into a "Job Search Pipeline" Notion
@@ -46,6 +47,9 @@ jobseek/
 ├── config.json             # GITIGNORED: your real Gmail accounts, weights, paths, LinkedIn searches
 ├── alert-sources.json      # which senders/domains/subjects count as job alerts
 ├── NOTION_SETUP.md         # connecting the Notion MCP for notion_sync
+├── expand/                 # /expand: proposed profile additions from public sources
+│   ├── expand.md           # the Claude Code workflow
+│   └── tools/              # GitHub/Scholar/LinkedIn/press scanners + the CLI
 ├── linkedin/
 │   ├── app/                # vendored Electron app (signed-in LinkedIn session + local MCP endpoint)
 │   │   ├── src/, bin/, tests/, README.md   # unchanged from ai-job-search - see jobseek/NOTICE
@@ -53,9 +57,10 @@ jobseek/
 │   └── source.py           # run-alerts LinkedIn source: saved searches -> candidate links
 ├── mcp/
 │   ├── server.py           # stdio MCP server (see "MCP server" below)
-│   └── tools.py            # the twelve read-only/no-op-safe tool implementations
+│   └── tools.py            # the tool implementations (read-only, except dashboard and expand_profile, which each write only their own output file)
 ├── profile/
 │   ├── candidate-profile.md    # facts only - the never-invent grounding source [owner fills]
+│   ├── expand-proposals.md     # GITIGNORED: /expand's proposals, never applied automatically
 │   ├── job-evaluation.md       # Director/VP rubric: seniority + engineering gates, scoring
 │   └── writing-style.md        # tone rules + the 3-line "why me" note [owner fills voice]
 ├── tools/
@@ -179,9 +184,12 @@ touching the real `jobseek/config.json`).
 
 ## MCP server
 
-`mcp/server.py` is a stdio MCP server exposing jobseek's state read-only, so
-another tool (or a non-Claude-Code client) can query it without going
-through the `/run-alerts` conversation:
+`mcp/server.py` is a stdio MCP server exposing jobseek's state, so another
+tool (or a non-Claude-Code client) can query it without going through the
+`/run-alerts` conversation. Most of these are read-only; the three that are
+not each write one thing and nothing else - `notion_sync` one way into
+Notion, `dashboard` the offline HTML file, `expand_profile` the gitignored
+proposals file:
 
 - `run_alerts(account?, days?)` - list recent alert email and extracted
   posting links for one account (Gmail GET-only; does not write state)
@@ -209,6 +217,12 @@ through the `/run-alerts` conversation:
   seniority, hiring team), for outreach use alongside `get_posting`
 - `search_people(query, company?, title?, limit?)` - LinkedIn people search
   (recruiter/hiring-manager outreach prep); read-only, no connect/message
+- `expand_profile(sources?)` - scan the public sources the candidate profile
+  names (GitHub, Scholar, LinkedIn, talks/board/press pages) and write
+  source-attributed proposed profile additions to
+  `profile/expand-proposals.md`. Never edits the profile itself; `sources`
+  narrows the scan (e.g. `["github"]`) for a cheaper re-run. See
+  `jobseek/expand/README.md`.
 
 The three LinkedIn-backed tools delegate to `jobseek/linkedin/client.py`,
 which talks straight to the `linkedin/app` Electron app's local MCP endpoint
@@ -275,6 +289,7 @@ is a fallback for a different client, not the default here.
 
 ```
 python3 -m pytest jobseek/tests/ -q
+cd jobseek/expand && python3 -m pytest tests/ -q
 cd jobseek/linkedin/app && npm install && npm test
 ```
 

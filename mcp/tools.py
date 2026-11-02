@@ -7,8 +7,15 @@ the MCP wire protocol or touching stdin/stdout.
 Every tool here only reads jobseek's own state: `run_alerts` is the one
 exception that talks to the network (Gmail, read-only, GET-only - see
 tools/gmail_alerts.py), everything else reads state/seen_jobs.json,
-state/last_run.json, tracker.csv or the config. Nothing here writes to the
-repo, to Gmail, or sends anything.
+state/last_run.json, tracker.csv or the config. Nothing here writes to Gmail
+or sends anything.
+
+Two tools produce a file and nothing else: `dashboard` regenerates the
+offline HTML dashboard, and `expand_profile` reads public web sources
+(GET-only, robots-gated, `posting_guard`-scanned) and writes the gitignored
+`profile/expand-proposals.md`. `expand_profile` never writes to any other
+path, and in particular never to `profile/candidate-profile.md` - see
+jobseek/expand/tools/expand_profile.py.
 """
 
 from __future__ import annotations
@@ -32,6 +39,12 @@ import upskill_state  # noqa: E402
 from rank_state import load_state  # noqa: E402
 
 import client as linkedin_client  # noqa: E402
+
+
+# Source types `expand_profile` accepts, kept in step with
+# jobseek/expand/tools/profile_sources.py without importing it at module
+# import time (jobseek/expand is optional in a partial checkout).
+EXPAND_SOURCE_KINDS = ("github", "scholar", "linkedin", "talks", "press", "board", "site")
 
 
 class ToolError(Exception):
@@ -286,6 +299,36 @@ def upskill_report() -> dict:
     return payload
 
 
+def expand_profile(sources: list[str] | None = None) -> dict:
+    """Propose profile additions discovered in the owner's PUBLIC sources.
+
+    Scans the public sources `profile/candidate-profile.md` itself names -
+    GitHub (profile and every public repo), Google Scholar, LinkedIn, and any
+    talk/board/press/site URL listed there - and writes a source-attributed
+    competency map to the gitignored `profile/expand-proposals.md`.
+
+    `sources` narrows the scan to a subset of source types (e.g. `["github"]`)
+    for a cheaper re-run; omitted means every source type the profile names.
+
+    This tool never edits `candidate-profile.md` or any other profile file:
+    the proposals file is the artifact and the owner applies it by hand. The
+    return value is a summary - which sources were scanned and how many
+    signals each yielded, which were skipped and why, and the path to the
+    file - not the competency map, which can be long.
+    """
+    expand_tools = JOBSEEK_ROOT / "expand" / "tools"
+    if not (expand_tools / "expand_profile.py").is_file():
+        raise ToolError("jobseek/expand is not installed in this checkout")
+    if str(expand_tools) not in sys.path:
+        sys.path.insert(0, str(expand_tools))
+    import expand_profile as expand_impl  # noqa: PLC0415 - kept local so mcp/tools.py imports without expand/
+
+    try:
+        return expand_impl.run(sources=sources, cfg=_config())
+    except expand_impl.ExpandError as exc:
+        raise ToolError(str(exc)) from exc
+
+
 # name -> (callable, JSON Schema for its arguments)
 TOOLS = {
     "upskill_report": (
@@ -409,6 +452,20 @@ TOOLS = {
             "additionalProperties": False,
         },
     ),
+    "expand_profile": (
+        expand_profile,
+        {
+            "type": "object",
+            "properties": {
+                "sources": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": list(EXPAND_SOURCE_KINDS)},
+                    "description": "source types to scan (default: every type the profile names)",
+                },
+            },
+            "additionalProperties": False,
+        },
+    ),
 }
 
 
@@ -425,6 +482,7 @@ TOOL_DESCRIPTIONS = {
     "get_job": "Fetch one full LinkedIn job posting by id or URL via the signed-in linkedin-mcp app (outreach/ad-hoc use; passthrough to jobseek/linkedin).",
     "search_people": "LinkedIn people search (recruiter/hiring-manager outreach prep) via the signed-in linkedin-mcp app; read-only, no connect/message/follow.",
     "dashboard": "Regenerate the offline HTML pipeline dashboard (tracker + ranked postings) and return its file path.",
+    "expand_profile": "Scan the public sources the candidate profile names (GitHub, Scholar, LinkedIn, talks/board/press pages) and write source-attributed proposed profile additions to profile/expand-proposals.md. Never edits the profile itself.",
 }
 
 

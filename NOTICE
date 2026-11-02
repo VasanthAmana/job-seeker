@@ -66,6 +66,23 @@ SOFTWARE.
   outreach note)
 - `tailor/agents/resume-reviewer.md` - adapted from ai-job-search
   .claude/agents/application-reviewer.md (read-only reviewer subagent)
+- `expand/expand.md` - adapted from ai-job-search .claude/commands/expand.md
+  (competency expansion: discovery, A/B direct-lookup-plus-inference
+  enrichment, categorized source-attributed deduplicated map, grouped
+  summary with all/review/skip confirmation, source report), rebased on a
+  Director/VP AI-strategy executive: the local-documents steps (cv/,
+  linkedin/, diplomas/, references/) are dropped entirely for public sources
+  only, the IC category list is replaced by strategic scope / board-advisory
+  / publications / speaking / press / technical depth, and the write step
+  proposes into a separate `profile/expand-proposals.md` instead of
+  appending to the profile files
+- `expand/tools/competency_map.py` - the map, categories and A/B source
+  attribution from the same command's Steps 3-5, as code
+- `expand/tools/github_source.py` - from the same command's Step 1e (GitHub
+  profile plus every public repo, not only pinned ones), through the public
+  REST API and the jobseek fetch/guard stack
+- `expand/tools/web_source.py` - from the same command's Step 1f (other URLs
+  in the profile), narrowed to quoted pointers with a standing review note
 - `tailor/tailor.md` and `tailor/README.md` also incorporate guidance text
   from ai-job-search .claude/skills/job-application-assistant/
   03-writing-style.md, 05-cv-templates.md and 08-application-forms.md
@@ -142,4 +159,8 @@ The portal CLIs in ai-job-search derive from Mikkel Krogholm's skills repo
 
 - `tools/gmail_alerts.py` - read-only Gmail alert reading and link extraction
 - `dashboard/tests/` - dashboard tests and fixtures
+- `expand/tools/read_source.py`, `profile_sources.py`, `scholar_source.py`,
+  `linkedin_source.py`, `expand_profile.py` - the gated-fetch wrapper, the
+  profile reader, the Scholar parser, the LinkedIn tool/web fallback and the
+  orchestrator; no counterpart in ai-job-search
 - `jobseek/README.md`, `jobseek/CLAUDE.md`, `alert-sources.json`, tests and fixtures
