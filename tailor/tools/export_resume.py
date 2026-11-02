@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Export a tailored resume from Markdown to the owner's format.
+"""Export a tailored resume from Markdown to the owner's chosen format.
 
-Option (a) of the open resume-format decision: keep the owner's existing
-look. The tailored resume is authored in Markdown; this tool exports it.
+The owner decided the format question (2026-11): **--format latex is now
+the default** - ai-job-search's moderncv route (option (b)), with its
+compile-and-inspect loop (`latex_pipeline.py`: render, compile, verify page
+count/ATS text layer/layout overflow, re-render on a failed check). The
+original --format markdown route (option (a): keep the owner's .docx look
+via pandoc --reference-doc) is kept as an explicit fallback flag, not
+removed - see jobseek/tailor/README.md.
 
+--format markdown (this module's original behavior):
   * .docx export - pandoc with `--reference-doc <master.docx>`: pandoc takes
     styles (fonts, margins, colors, heading look) from the reference document,
     so the output keeps the owner's look without editing his file. When the
@@ -20,13 +26,20 @@ look. The tailored resume is authored in Markdown; this tool exports it.
 With --max-pages the PDF page count is enforced via pdftotext form feeds
 (the owner's resume budget is 2 pages); exit 1 when exceeded.
 
-Exit codes: 0 = all requested formats produced (and page budget met);
-1 = page budget exceeded or a requested export failed; 2 = skipped
-(prerequisite missing - pandoc absent, or no PDF engine for a PDF request).
+--format latex delegates entirely to latex_pipeline.py (render_latex.py +
+compile_latex.py + verify_pdf.py + verify_layout.py) - see that module and
+jobseek/tailor/LATEX_SETUP.md for the TeX distribution it needs.
+
+Exit codes: 0 = requested format produced (and page budget met);
+1 = page budget exceeded, layout check failed, or a requested export
+failed; 2 = skipped (prerequisite missing - pandoc/LaTeX engine absent).
 
 Usage:
     export_resume.py --in tailored.md --out-dir out/ [--basename name] \
-        [--formats docx,pdf] [--reference-doc master.docx] [--max-pages 2]
+        --format latex [--why-me why_me.md --role R --company C] [--max-pages 2]
+    export_resume.py --in tailored.md --out-dir out/ [--basename name] \
+        --format markdown [--formats docx,pdf] [--reference-doc master.docx] \
+        [--max-pages 2]
 """
 
 from __future__ import annotations
@@ -36,6 +49,8 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 PDF_ENGINES = ["tectonic", "pdflatex", "xelatex", "lualatex",
                "wkhtmltopdf", "weasyprint"]
@@ -101,25 +116,53 @@ def export_pdf(md: Path, out: Path, docx: Path | None) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        description="Export a tailored markdown resume to .docx and/or PDF, "
-                    "keeping the owner's look via --reference-doc.")
+        description="Export a tailored markdown resume - LaTeX/PDF by "
+                    "default (option (b)), or --format markdown for the "
+                    ".docx/PDF pandoc route (option (a)).")
     ap.add_argument("--in", dest="input", required=True,
                     help="tailored resume (markdown)")
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--basename", help="output file stem "
                                        "(default: input stem)")
+    ap.add_argument("--format", choices=["latex", "markdown"], default="latex",
+                    help="rendering route: latex (default, moderncv + "
+                         "compile-and-inspect loop) or markdown (pandoc "
+                         ".docx/PDF, the owner's original look)")
+    ap.add_argument("--why-me", help="(--format latex) why-me note markdown, "
+                                     "rendered via cover.cls")
+    ap.add_argument("--role", default="", help="(--format latex) role title "
+                                               "for the why-me header")
+    ap.add_argument("--company", default="", help="(--format latex) company "
+                                                  "name for the why-me header")
     ap.add_argument("--formats", default="docx,pdf",
-                    help="comma list: docx,pdf (default: both)")
+                    help="(--format markdown) comma list: docx,pdf (default: both)")
     ap.add_argument("--reference-doc",
-                    help="owner's master .docx - pandoc takes its styles")
-    ap.add_argument("--max-pages", type=int,
-                    help="enforce a PDF page budget (resume: 2)")
+                    help="(--format markdown) owner's master .docx - pandoc "
+                         "takes its styles")
+    ap.add_argument("--max-pages", type=int, default=2,
+                    help="enforce a PDF page budget (resume: 2; default 2)")
     args = ap.parse_args(argv)
 
     md = Path(args.input)
     if not md.is_file():
         print(f"export_resume: error: no such file: {md}", file=sys.stderr)
         return 2
+
+    if args.format == "latex":
+        import latex_pipeline
+        rc, messages = latex_pipeline.run(
+            md, Path(args.out_dir),
+            basename=args.basename,
+            why_me_md=Path(args.why_me) if args.why_me else None,
+            role=args.role,
+            company=args.company,
+            max_pages=args.max_pages,
+        )
+        stream = sys.stdout if rc == 0 else sys.stderr
+        for m in messages:
+            print(m, file=stream)
+        return rc
+
     if not shutil.which("pandoc"):
         print("skipped: pandoc not found (brew install pandoc); "
               "the markdown resume is still final and can be exported later",

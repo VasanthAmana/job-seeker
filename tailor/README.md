@@ -44,8 +44,13 @@ a raw URL the command fetches it, preferring the employer's own ATS page.
 Written to `jobseek/applications/<company>_<role>/` (personal, gitignored):
 
 - `resume_<company>_<role>.md` - the tailored resume (Markdown master)
-- `resume_<company>_<role>.docx` / `.pdf` - exports (see below)
+- `resume_<company>_<role>.tex` / `.pdf` - LaTeX export (default; see below),
+  plus `cover.cls` copied alongside so the `.tex` compiles standalone
+- `resume_<company>_<role>.docx` / `.pdf` - pandoc export under
+  `--format markdown` (see below)
 - `why_me_<company>_<role>.md` - the 3-line outreach note
+- `why_me_<company>_<role>.tex` / `.pdf` - the why-me note rendered via
+  `cover.cls` (`--format latex` only)
 - `job_posting.md` - the JD as cleaned by `posting_guard.py`, verbatim
 
 ## The never-invent rule, enforced
@@ -78,11 +83,32 @@ against the tailored resume and reports each as covered / missing; the
 workflow classifies misses as synonym-only, missing (have it) - add it, or
 missing (gap) - leave it. Keywords are never stuffed.
 
-## Resume format: option (a), with (b) noted
+## Resume format: option (b) by default, option (a) as a fallback flag
 
-The format decision is still open with the owner. This builds **option (a):
-keep his look** - the tailored resume is authored in Markdown and exported
-by `tools/export_resume.py`:
+The owner decided (2026-11): **LaTeX is the default** (`--format latex`,
+also the default when `--format` is omitted) - ai-job-search's moderncv
+templates (MIT, see `jobseek/NOTICE`), with the
+`verify_pdf.py`/`verify_layout.py` compile-and-inspect loop. `--format
+markdown` keeps the original pandoc/.docx route available as a fallback,
+not removed.
+
+**`--format latex` (default):**
+
+- The tailored Markdown is rendered to a moderncv `.tex` resume
+  (`tools/render_latex.py` - pure text transform, no subprocess) and, when
+  `--why-me` is passed, a `cover.cls` why-me-note `.tex`.
+- Compiled with the first engine found - tectonic, latexmk, pdflatex,
+  xelatex, lualatex (`tools/compile_latex.py`). No engine: see
+  `LATEX_SETUP.md` to install one, or use `--format markdown` instead.
+- Verified before being called done (`tools/latex_pipeline.py`):
+  `verify_pdf.py` checks page count (`--max-pages`) and an extractable ATS
+  text layer; `verify_layout.py` checks the compile log for overflow
+  (`Overfull \hbox`/`\vbox`) or holes (`Underfull \vbox`). A failed check
+  recompiles once automatically; a genuine content problem exits 1 with the
+  specific reason instead of shipping a broken PDF - cut by relevance
+  weighting (tailor.md Step 2) and re-run.
+
+**`--format markdown` (fallback, keeps the owner's existing .docx look):**
 
 - **.docx**: `pandoc --reference-doc <his master .docx>` - pandoc takes the
   styles (fonts, margins, heading look) from the reference document, so the
@@ -95,11 +121,6 @@ by `tools/export_resume.py`:
   the .docx. With no engine the PDF step skips cleanly and .docx + Markdown
   are delivered. `--max-pages 2` enforces the page budget via pdftotext.
 
-**Option (b), later**: adopt ai-job-search's LaTeX moderncv templates with
-its `verify_pdf.py`/`verify_layout.py` compile-and-inspect loop - the best
-ATS text-layer checking, at the cost of rebuilding his look in LaTeX. Only
-worth it if ATS rejections become a concern.
-
 ## Tools
 
 | Tool | Purpose |
@@ -107,10 +128,16 @@ worth it if ATS rejections become a concern.
 | `tools/posting_guard.py` | integrity gate for untrusted JD text (copied, MIT): strips hidden HTML/invisible characters, flags instruction-shaped lines |
 | `tools/grounding_audit.py` | deterministic never-invent audit (metrics, dates, titles, tools vs sources) |
 | `tools/ats_keywords.py` | JD keyword coverage: covered vs missing |
-| `tools/export_resume.py` | Markdown -> .docx (owner's styles via reference-doc) and PDF, 2-page budget |
+| `tools/export_resume.py` | unified export entry point: `--format latex` (default) or `--format markdown` |
+| `tools/render_latex.py` | Markdown -> moderncv/`cover.cls` LaTeX (pure text transform, no subprocess) |
+| `tools/compile_latex.py` | `.tex` -> `.pdf` via the first LaTeX engine found |
+| `tools/verify_pdf.py` | page count + ATS text-layer check on the compiled PDF |
+| `tools/verify_layout.py` | overflow/hole check on the compile log |
+| `tools/latex_pipeline.py` | ties the four tools above into the render/compile/verify/re-render loop |
 
-All tools are Python 3.10+ stdlib-only; export needs `pandoc` (and a PDF
-engine for PDF).
+All tools are Python 3.10+ stdlib-only. `--format latex` needs a TeX
+distribution (see `LATEX_SETUP.md`) and `pdftotext`; `--format markdown`
+needs `pandoc` (and a PDF engine for PDF).
 
 ## Tests
 
