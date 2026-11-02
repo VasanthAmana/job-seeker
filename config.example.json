@@ -46,5 +46,13 @@
     "seen_jobs": "state/seen_jobs.json",
     "last_run": "state/last_run.json",
     "tracker": "tracker.csv"
+  },
+
+  "notion": {
+    "_comment": "OAuth token folder, same shape as a Gmail account folder - created by the Notion MCP's own sign-in, never a token committed here.",
+    "account_dir": "~/.notion-mcp/default",
+    "database_name": "Job Search Pipeline",
+    "database_id": null,
+    "parent_page_id": null
   }
 }

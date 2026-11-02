@@ -46,6 +46,12 @@ DEFAULTS = {
         "last_run": "state/last_run.json",
         "tracker": "tracker.csv",
     },
+    "notion": {
+        "account_dir": "~/.notion-mcp/default",
+        "database_name": "Job Search Pipeline",
+        "database_id": None,
+        "parent_page_id": None,
+    },
 }
 
 REQUIRED_TOP_LEVEL = ("accounts", "ranking", "paths")
@@ -167,3 +173,13 @@ def top_n(config: dict) -> int:
 
 def candidate_limit(config: dict) -> int:
     return int(config["ranking"].get("candidate_limit", DEFAULTS["ranking"]["candidate_limit"]))
+
+
+def notion_config(config: dict) -> dict:
+    """jobseek/notion.* merged with defaults - account_dir expanded to an
+    absolute Path (the OAuth token folder, same shape as a Gmail account
+    folder: never committed, holds no repo-tracked secret)."""
+    notion = dict(DEFAULTS["notion"])
+    notion.update(config.get("notion") or {})
+    notion["account_dir"] = Path(notion["account_dir"]).expanduser()
+    return notion

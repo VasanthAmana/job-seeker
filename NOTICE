@@ -69,6 +69,31 @@ SOFTWARE.
 - `tailor/tailor.md` and `tailor/README.md` also incorporate guidance text
   from ai-job-search .claude/skills/job-application-assistant/
   03-writing-style.md, 05-cv-templates.md and 08-application-forms.md
+- `tailor/tools/latex_templates/resume.tex.tmpl` - reimplemented from
+  ai-job-search's moderncv CV template (no local copy of the upstream file
+  was available to vendor verbatim in this environment; structure and intent
+  - moderncv `classic` style, name/address/contact header, section-per-block
+  layout - follow the upstream template)
+- `tailor/tools/latex_templates/cover.cls` - reimplemented from
+  ai-job-search's `cover.cls` why-me/cover-letter class, same reason as above
+- `tailor/tools/render_latex.py` - new renderer (Markdown -> the templates
+  above) written for jobseek's own resume Markdown shape, replacing
+  ai-job-search's own LaTeX-authoring convention
+- `tailor/tools/compile_latex.py`, `tailor/tools/verify_pdf.py`,
+  `tailor/tools/verify_layout.py` - reimplemented from ai-job-search's
+  compile-and-inspect loop and its `verify_pdf.py`/`verify_layout.py`
+  (page count, ATS text-layer presence, layout overflow/holes), adapted to
+  jobseek's export-tool exit-code conventions (0/1/2, matching
+  `export_resume.py`)
+- `tailor/tools/latex_pipeline.py` - new orchestrator tying the four files
+  above into the render/compile/verify/re-render loop; not present as a
+  single file upstream
+- `tools/notion_sync.py`, `tools/notion_client.py`,
+  `.claude/commands/notion-sync.md` - reimplemented from ai-job-search's
+  `/notion-sync` command (one-way sync of the tracker/shortlist into a
+  Notion database), rebased on jobseek's state/seen_jobs.json schema and
+  Director/VP rank fields, and on OAuth-based Notion MCP access (no stored
+  Notion API token) instead of ai-job-search's own auth approach
 
 The portal CLIs in ai-job-search derive from Mikkel Krogholm's skills repo
 (acknowledged in its README); none of them are copied here.

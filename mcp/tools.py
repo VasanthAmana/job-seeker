@@ -24,6 +24,7 @@ if str(TOOLS_DIR) not in sys.path:
 
 import config as jobseek_config  # noqa: E402
 import gmail_alerts  # noqa: E402
+import notion_sync  # noqa: E402
 from rank_state import load_state  # noqa: E402
 
 
@@ -177,6 +178,20 @@ def tailor(job_id: str) -> dict:
     }
 
 
+def notion_sync_tool(min_score: float | None = None, all: bool | None = None, rebuild: bool | None = None) -> dict:  # noqa: A002
+    """One-way, read-only sync of the ranked shortlist (or everything, with
+    `all`) into the "Job Search Pipeline" Notion database via the Notion MCP
+    (OAuth). Writes nothing back into jobseek's own ranking data - only each
+    synced posting's Notion page id, so a resync updates the same page
+    rather than creating a duplicate. Returns `{"connected": false, ...}`
+    (not an error) when Notion isn't connected."""
+    cfg = _config()
+    try:
+        return notion_sync.sync(cfg, min_score=min_score, all_=bool(all), rebuild=bool(rebuild))
+    except notion_sync.notion_client.NotionError as exc:
+        raise ToolError(str(exc)) from exc
+
+
 # name -> (callable, JSON Schema for its arguments)
 TOOLS = {
     "run_alerts": (
@@ -231,6 +246,18 @@ TOOLS = {
             "additionalProperties": False,
         },
     ),
+    "notion_sync": (
+        notion_sync_tool,
+        {
+            "type": "object",
+            "properties": {
+                "min_score": {"type": "number", "description": "sync postings with rank_score >= this (0-100 scale); omit for the current shortlist"},
+                "all": {"type": "boolean", "description": "sync every stored posting regardless of score or gate verdict"},
+                "rebuild": {"type": "boolean", "description": "create a fresh Notion page for every synced posting instead of updating the tracked one"},
+            },
+            "additionalProperties": False,
+        },
+    ),
 }
 
 
@@ -241,6 +268,7 @@ TOOL_DESCRIPTIONS = {
     "get_posting": "Look up one stored posting by its key.",
     "search_seen": "Search stored postings by title/company/reason/location substring.",
     "tailor": "Ground the jobseek/tailor workflow on one stored posting (read-only prep; drafting itself runs as a Claude Code /tailor session).",
+    "notion_sync": "One-way sync of the ranked shortlist (or everything) into the \"Job Search Pipeline\" Notion database; no-ops cleanly when Notion isn't connected.",
 }
 
 

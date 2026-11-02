@@ -24,6 +24,10 @@ re-rank stored postings), `run alerts --limit 20 --top 5`.
 `tailor [job]` is a separate step built in `jobseek/tailor/` - do not expect
 it here yet.
 
+`notion sync` (`.claude/commands/notion-sync.md`) pushes the current
+shortlist (or everything, with `--all`) into a "Job Search Pipeline" Notion
+database, one-way - see `NOTION_SETUP.md`.
+
 ## Layout
 
 ```
@@ -34,9 +38,10 @@ jobseek/
 ├── config.example.json     # config schema + placeholder values - copy to config.json
 ├── config.json             # GITIGNORED: your real Gmail accounts, weights, paths
 ├── alert-sources.json      # which senders/domains/subjects count as job alerts
+├── NOTION_SETUP.md         # connecting the Notion MCP for notion_sync
 ├── mcp/
 │   ├── server.py           # stdio MCP server (see "MCP server" below)
-│   └── tools.py            # the six read-only tool implementations
+│   └── tools.py            # the seven read-only/no-op-safe tool implementations
 ├── profile/
 │   ├── candidate-profile.md    # facts only - the never-invent grounding source [owner fills]
 │   ├── job-evaluation.md       # Director/VP rubric: seniority + engineering gates, scoring
@@ -49,11 +54,13 @@ jobseek/
 │   ├── fetch_page.py       # browser-header GET retry (robots-enforced)
 │   ├── robots_check.py     # robots.txt gate
 │   ├── posting_guard.py    # integrity gate for untrusted posting text
-│   └── page_decode.py      # charset-aware page decoding
+│   ├── page_decode.py      # charset-aware page decoding
+│   ├── notion_sync.py      # one-way shortlist/tracker -> Notion sync (filtering + create/update logic)
+│   └── notion_client.py    # Notion REST client, OAuth token read from an external account folder
 ├── state/                  # GITIGNORED: seen_jobs.json, last run output
 ├── applications/           # GITIGNORED: per-application archive
 ├── tracker.schema.csv      # the tracker columns - copy to tracker.csv to start
-└── tests/                  # pytest; fixtures only, no live Gmail or web
+└── tests/                  # pytest; fixtures only, no live Gmail, web or Notion
 ```
 
 ## First-time setup (owner)
@@ -115,6 +122,11 @@ through the `/run-alerts` conversation:
   (read-only prep: returns paths and the `/tailor` invocation; the actual
   drafting still runs as an interactive Claude Code session, since
   `tailor.md` is a drafter-reviewer workflow, not a deterministic script)
+- `notion_sync(min_score?, all?, rebuild?)` - one-way sync of the ranked
+  shortlist (or everything, with `all`) into a "Job Search Pipeline" Notion
+  database via the Notion MCP's own OAuth; no Notion token is stored here,
+  and it returns `{"connected": false, ...}` rather than erroring when
+  Notion isn't connected - see `NOTION_SETUP.md`
 
 Pure stdlib, no `mcp` package dependency - works the same on Windows and
 macOS. Register it with Claude Code from the repo root:

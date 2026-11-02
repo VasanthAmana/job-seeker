@@ -64,9 +64,10 @@ def ranked_entry(title, company, url, score, **extra):
 # --- tool registry / schema shape ------------------------------------------
 
 
-def test_tool_registry_has_exactly_the_six_required_tools():
+def test_tool_registry_has_exactly_the_seven_required_tools():
     assert set(mcp_tools.TOOLS) == {
         "run_alerts", "rank", "list_shortlist", "get_posting", "search_seen", "tailor",
+        "notion_sync",
     }
 
 
@@ -97,6 +98,18 @@ def test_run_alerts_and_rank_and_shortlist_have_no_required_fields():
     for name in ("run_alerts", "rank", "list_shortlist"):
         _func, schema = mcp_tools.TOOLS[name]
         assert "required" not in schema
+
+
+def test_notion_sync_schema_has_no_required_fields():
+    _func, schema = mcp_tools.TOOLS["notion_sync"]
+    assert "required" not in schema
+    assert set(schema["properties"]) == {"min_score", "all", "rebuild"}
+
+
+def test_notion_sync_tool_noops_cleanly_when_not_connected(jobseek_config_file):
+    result = mcp_tools.notion_sync_tool()
+    assert result["connected"] is False
+    assert "message" in result
 
 
 # --- call_tool dispatch ------------------------------------------------------

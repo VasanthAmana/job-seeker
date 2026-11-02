@@ -243,26 +243,56 @@ Present the coverage table and classify every miss:
 - **missing (gap)** - a genuine gap: leave it missing, list it in the final
   gaps section. **Never stuff keywords.**
 
-## Step 6: Export (option (a): keep the owner's look)
+## Step 6: Export (default: LaTeX, option (b))
+
+The owner decided (2026-11): LaTeX is the default export route - moderncv
+resume + `cover.cls` why-me note, with a compile-and-inspect loop (page
+count, ATS text layer, layout overflow/holes). The Markdown/.docx route
+(option (a)) is kept available behind `--format markdown` for whenever a TeX
+distribution isn't installed or the owner wants his original look back.
 
 ```bash
 python3 jobseek/tailor/tools/export_resume.py \
   --in jobseek/applications/<company>_<role>/resume_<company>_<role>.md \
   --out-dir jobseek/applications/<company>_<role>/ \
-  --reference-doc <master.docx when the master resume is .docx> \
+  --why-me jobseek/applications/<company>_<role>/why_me_<company>_<role>.md \
+  --role "<role title>" --company "<company>" \
   --max-pages 2
 ```
 
-- pandoc takes styles from `--reference-doc`, so the .docx keeps the owner's
-  look. When his master is .docx, always pass it.
-- PDF uses the first available engine; with none it skips cleanly - note the
-  degraded mode and deliver .docx + Markdown.
-- If the page budget fails (exit 1, "exceeds the 2-page budget"), cut by
-  relevance weighting (Step 2) and re-export. Never squeeze margins or fonts.
+(`--format latex` is the default - no flag needed unless falling back.)
+
+- Renders the tailored Markdown to a moderncv `.tex` (and the why-me note to
+  a `cover.cls` `.tex`), compiles with the first LaTeX engine found
+  (tectonic, latexmk, pdflatex, xelatex, lualatex - see
+  `jobseek/tailor/LATEX_SETUP.md` for installing one), then verifies page
+  count, an extractable ATS text layer, and layout overflow/holes from the
+  compile log.
+- **A failed verify re-renders, not ships a broken PDF.** The pipeline
+  retries the compile once by itself (moderncv sometimes needs a second
+  pass); a genuine content problem (page budget exceeded, text spilling off
+  the page) exits 1 with the specific reason - cut by relevance weighting
+  (Step 2) and re-run this step. Never squeeze margins or fonts to fit.
+- No TeX distribution on PATH: exits 2 with a `skipped:` line. Either install
+  one (`jobseek/tailor/LATEX_SETUP.md`) or fall back:
+
+  ```bash
+  python3 jobseek/tailor/tools/export_resume.py \
+    --in jobseek/applications/<company>_<role>/resume_<company>_<role>.md \
+    --out-dir jobseek/applications/<company>_<role>/ \
+    --format markdown \
+    --reference-doc <master.docx when the master resume is .docx> \
+    --max-pages 2
+  ```
+
+  pandoc takes styles from `--reference-doc`, so the .docx keeps the owner's
+  look; PDF uses the first available engine, else LibreOffice, else skips
+  cleanly (deliver .docx + Markdown).
 
 ## Step 7: Present
 
-- **Files created**: tailored `.md`, `.docx`/`.pdf`, why-me note, each with
+- **Files created**: tailored `.md`, `.tex`/`.pdf` (or `.docx`/`.pdf` under
+  `--format markdown`), why-me note (`.md` and its `.tex`/`.pdf`), each with
   its path.
 - **Gaps**: every JD requirement the sources do not support, with the honest
   framing suggested. This list is the answer to "say what is missing
