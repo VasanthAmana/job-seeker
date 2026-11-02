@@ -98,6 +98,33 @@ SOFTWARE.
 The portal CLIs in ai-job-search derive from Mikkel Krogholm's skills repo
 (acknowledged in its README); none of them are copied here.
 
+## Copied verbatim, whole directory
+
+- `linkedin/app/` - copied in full from ai-job-search's `linkedin_mcp/`
+  (an Electron app holding a signed-in LinkedIn session and a cross-platform
+  stdio/local-endpoint MCP relay: `src/main.js`, `src/server.js`,
+  `src/extractors.js`, `src/pacing.js`, `src/cache.js`, `src/paths.js`,
+  `src/urls.js`, `src/format.js`, `src/tools.js`, `bin/linkedin-mcp.js`,
+  `package.json`, and its own `tests/` and fixture HTML) - unchanged in
+  behavior, tests, Windows/macOS support, and pacing/rate-limit caps; only
+  its location moved, from a standalone repo's `linkedin_mcp/` to
+  `jobseek/linkedin/app/` inside this one
+
+## Adapted, new for the jobseek integration
+
+- `linkedin/client.py` - new: a Python client that speaks the same
+  newline-delimited JSON-RPC wire format as `linkedin/app/src/server.js`
+  directly (mirrors `linkedin/app/src/paths.js`'s endpoint resolution), so
+  jobseek's tools and MCP server never have to spawn Node at call time
+- `linkedin/source.py` - new: the run-alerts LinkedIn source, mapping
+  `linkedin/app`'s `linkedin_search_jobs` results into the exact candidate
+  shape `tools/alert_state.py` already consumes (same job_key dedupe,
+  same seen_jobs.json, no parallel pipeline)
+- `mcp/tools.py`'s `linkedin_search`, `get_job`, `search_people` - new:
+  jobseek MCP passthroughs to `linkedin/client.py`
+- `.claude/commands/run-alerts.md` - extended (not rewritten) to run
+  `linkedin/source.py candidates` alongside the Gmail alert ingest
+
 ## Written new for jobseek
 
 - `tools/gmail_alerts.py` - read-only Gmail alert reading and link extraction

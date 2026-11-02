@@ -19,13 +19,18 @@ from pathlib import Path
 
 JOBSEEK_ROOT = Path(__file__).resolve().parent.parent
 TOOLS_DIR = JOBSEEK_ROOT / "tools"
+LINKEDIN_DIR = JOBSEEK_ROOT / "linkedin"
 if str(TOOLS_DIR) not in sys.path:
     sys.path.insert(0, str(TOOLS_DIR))
+if str(LINKEDIN_DIR) not in sys.path:
+    sys.path.insert(0, str(LINKEDIN_DIR))
 
 import config as jobseek_config  # noqa: E402
 import gmail_alerts  # noqa: E402
 import notion_sync  # noqa: E402
 from rank_state import load_state  # noqa: E402
+
+import client as linkedin_client  # noqa: E402
 
 
 class ToolError(Exception):
@@ -178,6 +183,59 @@ def tailor(job_id: str) -> dict:
     }
 
 
+def linkedin_search(
+    query: str,
+    location: str | None = None,
+    remote: bool | None = None,
+    experience_levels: list | None = None,
+    date_posted: str | None = None,
+    job_type: str | None = None,
+    limit: int | None = None,
+) -> dict:
+    """Run a live LinkedIn Jobs search through the signed-in linkedin-mcp
+    app (jobseek/linkedin/app/) - the same saved-search shape `run-alerts`
+    replays from config, available here for an ad-hoc query. Raises
+    ToolError with a "LinkedIn needs you"-style message when the app isn't
+    running or isn't signed in, instead of a raw connection failure."""
+    if not query or not isinstance(query, str):
+        raise ToolError("query must be a non-empty string")
+    try:
+        return linkedin_client.search_jobs(
+            query,
+            location=location,
+            remote=remote,
+            experience_levels=experience_levels,
+            date_posted=date_posted,
+            job_type=job_type,
+            limit=limit,
+        )
+    except linkedin_client.LinkedInError as exc:
+        raise ToolError(str(exc)) from exc
+
+
+def get_job(job_id: str | None = None, url: str | None = None) -> dict:
+    """One full LinkedIn job posting by id or URL, via the signed-in
+    linkedin-mcp app - passthrough for outreach use alongside `get_posting`
+    (which looks up jobseek's own stored postings, any source)."""
+    if not job_id and not url:
+        raise ToolError("provide job_id or url")
+    try:
+        return linkedin_client.get_job(job_id=job_id, url=url)
+    except linkedin_client.LinkedInError as exc:
+        raise ToolError(str(exc)) from exc
+
+
+def search_people(query: str, company: str | None = None, title: str | None = None, limit: int | None = None) -> dict:
+    """LinkedIn people search (recruiter/hiring-manager outreach prep) via
+    the signed-in linkedin-mcp app - read-only, no connect/message/follow."""
+    if not query or not isinstance(query, str):
+        raise ToolError("query must be a non-empty string")
+    try:
+        return linkedin_client.search_people(query, company=company, title=title, limit=limit)
+    except linkedin_client.LinkedInError as exc:
+        raise ToolError(str(exc)) from exc
+
+
 def notion_sync_tool(min_score: float | None = None, all: bool | None = None, rebuild: bool | None = None) -> dict:  # noqa: A002
     """One-way, read-only sync of the ranked shortlist (or everything, with
     `all`) into the "Job Search Pipeline" Notion database via the Notion MCP
@@ -258,6 +316,51 @@ TOOLS = {
             "additionalProperties": False,
         },
     ),
+    "linkedin_search": (
+        linkedin_search,
+        {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "LinkedIn Jobs keyword query; boolean syntax (AND/OR/NOT, quotes) passes through"},
+                "location": {"type": "string", "description": "place string, e.g. \"Denver Metropolitan Area\" or \"United States\""},
+                "remote": {"type": "boolean", "description": "true adds LinkedIn's Remote workplace filter"},
+                "experience_levels": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["internship", "entry_level", "associate", "mid_senior", "director", "executive"]},
+                },
+                "date_posted": {"type": "string", "enum": ["past_24_hours", "past_week", "past_month", "any"]},
+                "job_type": {"type": "string", "enum": ["full_time", "part_time", "contract", "temporary", "volunteer", "internship"]},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 50},
+            },
+            "required": ["query"],
+            "additionalProperties": False,
+        },
+    ),
+    "get_job": (
+        get_job,
+        {
+            "type": "object",
+            "properties": {
+                "job_id": {"type": "string", "description": "LinkedIn job id (digits) or urn:li:jobPosting:<id>"},
+                "url": {"type": "string", "description": "any LinkedIn URL containing /jobs/view/<id>"},
+            },
+            "additionalProperties": False,
+        },
+    ),
+    "search_people": (
+        search_people,
+        {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "who to look for, e.g. \"recruiter\" or \"talent acquisition\""},
+                "company": {"type": "string", "description": "folded into the query, e.g. \"Woodgrove Bank\""},
+                "title": {"type": "string", "description": "folded into the query, e.g. \"technical recruiter\""},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 25},
+            },
+            "required": ["query"],
+            "additionalProperties": False,
+        },
+    ),
 }
 
 
@@ -269,6 +372,9 @@ TOOL_DESCRIPTIONS = {
     "search_seen": "Search stored postings by title/company/reason/location substring.",
     "tailor": "Ground the jobseek/tailor workflow on one stored posting (read-only prep; drafting itself runs as a Claude Code /tailor session).",
     "notion_sync": "One-way sync of the ranked shortlist (or everything) into the \"Job Search Pipeline\" Notion database; no-ops cleanly when Notion isn't connected.",
+    "linkedin_search": "Run a live LinkedIn Jobs search through the signed-in linkedin-mcp app; raises a clear \"LinkedIn needs you\" error if the app isn't running or signed in.",
+    "get_job": "Fetch one full LinkedIn job posting by id or URL via the signed-in linkedin-mcp app (outreach/ad-hoc use; passthrough to jobseek/linkedin).",
+    "search_people": "LinkedIn people search (recruiter/hiring-manager outreach prep) via the signed-in linkedin-mcp app; read-only, no connect/message/follow.",
 }
 
 

@@ -52,6 +52,9 @@ DEFAULTS = {
         "database_id": None,
         "parent_page_id": None,
     },
+    "linkedin": {
+        "saved_searches": [],
+    },
 }
 
 REQUIRED_TOP_LEVEL = ("accounts", "ranking", "paths")
@@ -173,6 +176,15 @@ def top_n(config: dict) -> int:
 
 def candidate_limit(config: dict) -> int:
     return int(config["ranking"].get("candidate_limit", DEFAULTS["ranking"]["candidate_limit"]))
+
+
+def linkedin_saved_searches(config: dict) -> list[dict]:
+    """The `linkedin.saved_searches` the owner configured - query, locations,
+    experience_levels, remote, as entered into LinkedIn's own saved-search
+    UI - read from this same jobseek config, never a separate file."""
+    linkedin = config.get("linkedin") or {}
+    searches = linkedin.get("saved_searches")
+    return list(searches) if isinstance(searches, list) else []
 
 
 def notion_config(config: dict) -> dict:

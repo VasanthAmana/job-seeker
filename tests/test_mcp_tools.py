@@ -64,10 +64,10 @@ def ranked_entry(title, company, url, score, **extra):
 # --- tool registry / schema shape ------------------------------------------
 
 
-def test_tool_registry_has_exactly_the_seven_required_tools():
+def test_tool_registry_has_exactly_the_required_tools():
     assert set(mcp_tools.TOOLS) == {
         "run_alerts", "rank", "list_shortlist", "get_posting", "search_seen", "tailor",
-        "notion_sync",
+        "notion_sync", "linkedin_search", "get_job", "search_people",
     }
 
 
@@ -252,3 +252,55 @@ def test_run_alerts_fails_closed_without_oauth_files_no_network(jobseek_config_f
 def test_run_alerts_unknown_account_raises_config_error(jobseek_config_file):
     with pytest.raises(jobseek_config.ConfigError):
         mcp_tools.run_alerts(account="does-not-exist")
+
+
+# --- linkedin_search / get_job / search_people: no live LinkedIn app -------
+
+
+def test_linkedin_search_requires_query(jobseek_config_file, monkeypatch, tmp_path):
+    monkeypatch.setenv("LINKEDIN_MCP_SOCKET", str(tmp_path / "no-such-socket"))
+    with pytest.raises(mcp_tools.ToolError):
+        mcp_tools.linkedin_search("")
+
+
+def test_linkedin_search_gives_a_clear_error_when_app_not_running(jobseek_config_file, monkeypatch, tmp_path):
+    monkeypatch.setenv("LINKEDIN_MCP_SOCKET", str(tmp_path / "no-such-socket"))
+    with pytest.raises(mcp_tools.ToolError, match="LinkedIn needs you"):
+        mcp_tools.linkedin_search("AI strategy director")
+
+
+def test_get_job_requires_id_or_url(jobseek_config_file):
+    with pytest.raises(mcp_tools.ToolError):
+        mcp_tools.get_job()
+
+
+def test_get_job_gives_a_clear_error_when_app_not_running(jobseek_config_file, monkeypatch, tmp_path):
+    monkeypatch.setenv("LINKEDIN_MCP_SOCKET", str(tmp_path / "no-such-socket"))
+    with pytest.raises(mcp_tools.ToolError, match="LinkedIn needs you"):
+        mcp_tools.get_job(job_id="4023456789")
+
+
+def test_search_people_requires_query(jobseek_config_file):
+    with pytest.raises(mcp_tools.ToolError):
+        mcp_tools.search_people("")
+
+
+def test_search_people_gives_a_clear_error_when_app_not_running(jobseek_config_file, monkeypatch, tmp_path):
+    monkeypatch.setenv("LINKEDIN_MCP_SOCKET", str(tmp_path / "no-such-socket"))
+    with pytest.raises(mcp_tools.ToolError, match="LinkedIn needs you"):
+        mcp_tools.search_people("recruiter")
+
+
+def test_linkedin_search_schema_requires_query():
+    _func, schema = mcp_tools.TOOLS["linkedin_search"]
+    assert schema["required"] == ["query"]
+
+
+def test_get_job_schema_has_no_required_fields():
+    _func, schema = mcp_tools.TOOLS["get_job"]
+    assert "required" not in schema
+
+
+def test_search_people_schema_requires_query():
+    _func, schema = mcp_tools.TOOLS["search_people"]
+    assert schema["required"] == ["query"]
