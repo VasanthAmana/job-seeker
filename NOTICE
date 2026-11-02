@@ -98,6 +98,15 @@ SOFTWARE.
   stats rules, inline-SVG charts, filterable table, escaping rule), rebased on
   jobseek's tracker/seen_jobs/last_run; adds ranked-posting rows, flags,
   sources and follow-up due dates, and drops the outcome.md merge
+- `tools/upskill_state.py` - from `.claude/skills/upskill/SKILL.md` Steps 2-3
+  (the deterministic aggregate-mode merge: tracker/ranked dedupe on
+  company+title, fit/rank-score weights, blank-fit_rating and missing-gaps
+  skip rules), rebased on the jobseek layout and rank_state.norm
+- `upskill/upskill.md` - from `.claude/skills/upskill/SKILL.md` (skill-gap
+  heatmap, learning plan, study order, report format and trust rules),
+  specialized for a Director/VP AI-strategy search (leadership/strategy
+  competencies, not only technical skills) and rebased on jobseek's
+  state-through-tools rule
 
 The portal CLIs in ai-job-search derive from Mikkel Krogholm's skills repo
 (acknowledged in its README); none of them are copied here.

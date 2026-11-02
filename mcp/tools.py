@@ -7,8 +7,8 @@ the MCP wire protocol or touching stdin/stdout.
 Every tool here only reads jobseek's own state: `run_alerts` is the one
 exception that talks to the network (Gmail, read-only, GET-only - see
 tools/gmail_alerts.py), everything else reads state/seen_jobs.json,
-state/last_run.json or the config. Nothing here writes to the repo, to
-Gmail, or sends anything.
+state/last_run.json, tracker.csv or the config. Nothing here writes to the
+repo, to Gmail, or sends anything.
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ if str(LINKEDIN_DIR) not in sys.path:
 import config as jobseek_config  # noqa: E402
 import gmail_alerts  # noqa: E402
 import notion_sync  # noqa: E402
+import upskill_state  # noqa: E402
 from rank_state import load_state  # noqa: E402
 
 import client as linkedin_client  # noqa: E402
@@ -262,8 +263,35 @@ def dashboard(open: bool = False) -> dict:
     return {"path": str(path), "opened": bool(open)}
 
 
+def upskill_report() -> dict:
+    """The aggregate dataset `jobseek/upskill`'s /upskill workflow analyses:
+    tracker rows merged with ranked postings (deduped, weighted, recorded
+    gaps preferred over inference), plus the profile path, the previous
+    report for the diff, and where the new report is saved.
+
+    Like `tailor`, this is read-only prep: upskill.md is a Claude Code
+    slash-command workflow (skill extraction, profile diff, learning plan),
+    so the tool returns the deterministic merge and the `/upskill`
+    invocation rather than writing a report itself.
+    """
+    cfg = _config()
+    payload = upskill_state.build_payload(cfg)
+    payload["upskill_command_file"] = str(JOBSEEK_ROOT / "upskill" / "upskill.md")
+    payload["invoke"] = "/upskill"
+    payload["note"] = (
+        "jobseek/upskill is an interactive analysis workflow (upskill.md), "
+        "not a deterministic script - run the `invoke` command in a Claude "
+        "Code session to build the heatmap, learning plan and report."
+    )
+    return payload
+
+
 # name -> (callable, JSON Schema for its arguments)
 TOOLS = {
+    "upskill_report": (
+        upskill_report,
+        {"type": "object", "properties": {}, "additionalProperties": False},
+    ),
     "run_alerts": (
         run_alerts,
         {
@@ -385,6 +413,7 @@ TOOLS = {
 
 
 TOOL_DESCRIPTIONS = {
+    "upskill_report": "Aggregate tracked and ranked postings into the weighted gap-analysis dataset for /upskill (read-only prep; the report itself is written by a Claude Code /upskill session).",
     "run_alerts": "List recent job-alert email for one Gmail account and extract posting links (read-only, does not change stored state).",
     "rank": "Return the top-N ranked postings from stored state, highest score first.",
     "list_shortlist": "Return the shortlist from the most recent /run-alerts run.",

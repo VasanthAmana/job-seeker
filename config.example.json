@@ -46,7 +46,8 @@
     "seen_jobs": "state/seen_jobs.json",
     "last_run": "state/last_run.json",
     "tracker": "tracker.csv",
-    "dashboard": "state/dashboard.html"
+    "dashboard": "state/dashboard.html",
+    "upskill_reports": "upskill"
   },
 
   "notion": {
