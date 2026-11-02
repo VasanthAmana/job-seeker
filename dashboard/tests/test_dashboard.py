@@ -38,7 +38,7 @@ def seen_doc():
 def cfg(tmp_path):
     state = tmp_path / "state"
     state.mkdir()
-    shutil.copy(FIX / "tracker.csv", tmp_path / "tracker.csv")
+    shutil.copy(FIX / "tracker_sample.csv", tmp_path / "tracker.csv")
     (state / "seen_jobs.json").write_text(json.dumps(seen_doc()), encoding="utf-8")
     (state / "last_run.json").write_text(json.dumps({"ranked": [{"key": "k1"}]}), encoding="utf-8")
     return {"paths": {"state_dir": str(state), "seen_jobs": str(state / "seen_jobs.json"),
