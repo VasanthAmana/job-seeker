@@ -187,6 +187,20 @@ This runs on *your* account, so it behaves like a careful person, not a crawler:
 LinkedIn's own terms restrict automated access; this tool keeps volume low and is for personal use
 on your own account only.
 
+## When LinkedIn's markup doesn't match (page captures)
+
+LinkedIn re-skins its pages from time to time, which can make an extractor come back empty (e.g.
+"no job cards found with any known selector"). When that happens on `linkedin_search_jobs`,
+`linkedin_get_job`, `linkedin_list_saved_jobs` or `linkedin_list_job_alerts`, the app saves what the
+page already loaded for that call actually looked like - its HTML, a screenshot, the URL and a
+timestamp - to a local capture folder, and the result's `capture` field names where it went
+(`null` when nothing was captured). No extra page load happens for this: it reads the page the call
+already fetched.
+
+- Default location: `<userData>/captures` (a sibling of the app's own session data, outside the
+  repo). Override with `LINKEDIN_MCP_CAPTURE_DIR`.
+- Captured pages are signed-in LinkedIn content and must never be committed; they stay local.
+
 ## How it works (the Zook shape)
 
 ```

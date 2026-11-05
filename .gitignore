@@ -63,3 +63,9 @@ linkedin/app/dist/
 # LinkedIn app's own persistent session/user-data (local sign-in, never the repo's concern,
 # but guard in case LINKEDIN_MCP_USER_DATA is ever pointed in-repo during local testing)
 linkedin/app/.linkedin-mcp-data/
+
+# Captured pages (HTML + screenshots) from zero-result/failed-parse tool calls -
+# signed-in LinkedIn content, never the repo's concern. Default lives outside the
+# repo (under the app's user-data dir); guard in case LINKEDIN_MCP_CAPTURE_DIR is
+# ever pointed in-repo during local testing.
+linkedin/app/captures/

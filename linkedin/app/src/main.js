@@ -28,6 +28,7 @@ const { SessionCache } = require("./cache");
 const { table, renderToolResult } = require("./format");
 const tools = require("./tools");
 const { startMcpServer } = require("./server");
+const capture = require("./capture");
 
 const PARTITION = "persist:linkedin-mcp";
 const LINKEDIN_HOSTS = /(^|\.)linkedin\.com$/i;
@@ -38,6 +39,7 @@ const SETTLE_MS = 1500; // let the page paint before reading it
 
 const pacer = new Pacer({ maxLoadsPerHour: MAX_LOADS_PER_HOUR });
 const cache = new SessionCache({ ttlMs: 600_000 });
+const CAPTURE_DIR = capture.captureDir(process.env, userDataDir());
 
 let win = null;
 let mcp = null;
@@ -100,6 +102,25 @@ async function loadSignedInPage(url) {
   });
 }
 
+// Step 1 of the LinkedIn-markup-changed fix: on a zero-result/failed-parse
+// payload, save the page already loaded for this call (no extra navigation,
+// no extra page load, so it never touches the pacer's budget). Returns the
+// value to attach to the tool's response as `capture` (null if not
+// triggered), so where a capture went is visible in the result, not just the
+// logs.
+async function captureFromLivePage(toolName, payload) {
+  return capture.captureIfTriggered({
+    toolName,
+    payload,
+    dir: CAPTURE_DIR,
+    getPage: async () => ({
+      url: win.webContents.getURL(),
+      html: await win.webContents.executeJavaScript("document.documentElement.outerHTML", true),
+      png: (await win.webContents.capturePage()).toPNG(),
+    }),
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Tool handlers (each returns an MCP result: { content: [...] })
 // ---------------------------------------------------------------------------
@@ -149,6 +170,7 @@ async function searchJobs(args) {
     start += SEARCH_PAGE_SIZE;
   }
   const payload = { query: args.query, filters: args, count: jobs.length, jobs, warnings };
+  payload.capture = await captureFromLivePage("linkedin_search_jobs", payload);
   const rows = jobs.map((j) => [
     j.title,
     j.company,
@@ -165,6 +187,7 @@ async function getJob(args) {
   if (!ref) throw new Error("could not parse a LinkedIn job id from the input");
   await loadSignedInPage(ref.url);
   const detail = await pacer.run(() => evalInPage(extractors.extractJobDetail), { billable: false });
+  detail.capture = await captureFromLivePage("linkedin_get_job", detail);
   const descPreview = detail.description.length > 600 ? detail.description.slice(0, 600) + "…" : detail.description;
   const text = [
     `${detail.title} — ${detail.company}`,
@@ -186,6 +209,7 @@ async function getJob(args) {
 async function listJobAlerts() {
   await loadSignedInPage(urls.JOB_ALERTS_URL);
   const data = await pacer.run(() => evalInPage(extractors.extractJobAlerts), { billable: false });
+  data.capture = await captureFromLivePage("linkedin_list_job_alerts", data);
   const rows = data.alerts.map((a) => [
     a.query,
     a.detail,
@@ -199,6 +223,7 @@ async function listSavedJobs(args) {
   const data = await pacer.run(() => evalInPage(extractors.extractSavedJobs, { limit: args.limit || 25 }), {
     billable: false,
   });
+  data.capture = await captureFromLivePage("linkedin_list_saved_jobs", data);
   const rows = data.jobs.map((j) => [j.title, j.company, j.location, j.jobId]);
   return ok(data, table(["TITLE", "COMPANY", "LOCATION", "JOB ID"], rows));
 }
