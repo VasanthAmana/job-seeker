@@ -267,38 +267,39 @@ def cmd_candidates(args) -> int:
 
 
 def cmd_sweep(args) -> int:
-    doc, seen = load_state(args.state)
-    today = args.today
-    exclude = {k.strip() for k in (args.exclude or "").split(",") if k.strip()}
+    with jobseek_config.state_lock(args.state):
+        doc, seen = load_state(args.state)
+        today = args.today
+        exclude = {k.strip() for k in (args.exclude or "").split(",") if k.strip()}
 
-    expired, closing, unparseable, checked = [], [], [], 0
-    for key, entry in seen.items():
-        if entry.get("status") != "ranked" or key in exclude:
-            continue
-        checked += 1
-        raw = entry.get("deadline")
-        if raw in (None, ""):
-            continue
-        parsed = parse_iso(raw)
-        if parsed is None:
-            unparseable.append({"key": key, "source": entry.get("source"), "deadline": raw})
-            continue
-        row = {
-            "key": key,
-            "title": entry.get("title"),
-            "company": entry.get("company"),
-            "url": entry.get("url"),
-            "deadline": raw,
-        }
-        if parsed < today:
-            expired.append(row)
-        elif (parsed - today).days <= URGENT_DAYS:
-            closing.append(row)
+        expired, closing, unparseable, checked = [], [], [], 0
+        for key, entry in seen.items():
+            if entry.get("status") != "ranked" or key in exclude:
+                continue
+            checked += 1
+            raw = entry.get("deadline")
+            if raw in (None, ""):
+                continue
+            parsed = parse_iso(raw)
+            if parsed is None:
+                unparseable.append({"key": key, "source": entry.get("source"), "deadline": raw})
+                continue
+            row = {
+                "key": key,
+                "title": entry.get("title"),
+                "company": entry.get("company"),
+                "url": entry.get("url"),
+                "deadline": raw,
+            }
+            if parsed < today:
+                expired.append(row)
+            elif (parsed - today).days <= URGENT_DAYS:
+                closing.append(row)
 
-    if args.write and expired:
-        for row in expired:
-            seen[row["key"]]["status"] = "expired"
-        save_state(args.state, doc)
+        if args.write and expired:
+            for row in expired:
+                seen[row["key"]]["status"] = "expired"
+            save_state(args.state, doc)
 
     print(
         json.dumps(
@@ -356,6 +357,11 @@ def _is_veto(row: dict) -> bool:
 
 
 def cmd_apply(args) -> int:
+    with jobseek_config.state_lock(args.state):
+        return _apply_locked(args)
+
+
+def _apply_locked(args) -> int:
     doc, seen = load_state(args.state)
     today = args.today
     now = args.now

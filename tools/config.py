@@ -14,7 +14,9 @@ original single-account setup.
 
 from __future__ import annotations
 
+import contextlib
 import copy
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -186,6 +188,27 @@ def linkedin_saved_searches(config: dict) -> list[dict]:
     linkedin = config.get("linkedin") or {}
     searches = linkedin.get("saved_searches")
     return list(searches) if isinstance(searches, list) else []
+
+
+@contextlib.contextmanager
+def state_lock(path: Path):
+    """Exclusive advisory lock serializing a read-modify-write of `path`
+    across processes - `rank_state`, `alert_state` and `notion_sync` each
+    load the state file, mutate it, and atomically replace it, so without
+    this a concurrent pair can each read the same version and one's update
+    is lost to the other's replace. Held via `fcntl.flock` on a sidecar
+    `<path>.lock` file (stdlib only); every writer must hold it for its
+    whole load-mutate-save span, not just the final write.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = path.parent / f".{path.name}.lock"
+    with open(lock_path, "a+") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(fh, fcntl.LOCK_UN)
 
 
 def notion_config(config: dict) -> dict:

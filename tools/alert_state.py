@@ -29,6 +29,7 @@ import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
+import config as jobseek_config
 from job_key import make_key
 from rank_state import STATE, TRACKER, load_state, norm, save_state, tracker_pairs
 from url_canon import canonicalize_url
@@ -122,31 +123,32 @@ def select(jobs: list, seen: dict, tracker: set) -> tuple[list[dict], dict]:
 
 
 def run(args) -> int:
-    if args.state.exists():
-        doc, seen = load_state(args.state)
-    else:
-        doc = {"seen": {}}
-        seen = doc["seen"]
-    jobs = read_jobs(args.results)
-    selected, counts = select(jobs, seen, tracker_pairs(args.tracker))
-    if args.command == "candidates":
-        print(json.dumps({"selected": selected, **counts}, ensure_ascii=False))
-        return 0
+    with jobseek_config.state_lock(args.state):
+        if args.state.exists():
+            doc, seen = load_state(args.state)
+        else:
+            doc = {"seen": {}}
+            seen = doc["seen"]
+        jobs = read_jobs(args.results)
+        selected, counts = select(jobs, seen, tracker_pairs(args.tracker))
+        if args.command == "candidates":
+            print(json.dumps({"selected": selected, **counts}, ensure_ascii=False))
+            return 0
 
-    for job in selected:
-        try:
-            validate_stored(job)
-        except ValueError as exc:
-            raise ValueError(f"{job.get('url', '?')}: {exc}") from exc
-        key = make_key(job["company"], job["title"], job["url"])
-        if key in seen:
-            raise ValueError(f"canonical key already exists for another posting: {key}")
-        seen[key] = job
-    if selected:
-        args.state.parent.mkdir(parents=True, exist_ok=True)
-        save_state(args.state, doc)
-    print(json.dumps({"added": [make_key(j["company"], j["title"], j["url"]) for j in selected], **counts}, ensure_ascii=False))
-    return 0
+        for job in selected:
+            try:
+                validate_stored(job)
+            except ValueError as exc:
+                raise ValueError(f"{job.get('url', '?')}: {exc}") from exc
+            key = make_key(job["company"], job["title"], job["url"])
+            if key in seen:
+                raise ValueError(f"canonical key already exists for another posting: {key}")
+            seen[key] = job
+        if selected:
+            args.state.parent.mkdir(parents=True, exist_ok=True)
+            save_state(args.state, doc)
+        print(json.dumps({"added": [make_key(j["company"], j["title"], j["url"]) for j in selected], **counts}, ensure_ascii=False))
+        return 0
 
 
 def main(argv=None) -> int:

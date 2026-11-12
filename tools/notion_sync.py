@@ -174,47 +174,48 @@ def sync(
         }
 
     seen_jobs_path = jobseek_config.resolve_path(config, "seen_jobs")
-    loaded = _load_seen(seen_jobs_path)
-    if loaded is None:
-        return {
-            "connected": True,
-            "synced": 0,
-            "created": 0,
-            "updated": 0,
-            "message": f"no postings yet ({seen_jobs_path} not found) - run run-alerts first",
-        }
-    doc, seen = loaded
+    with jobseek_config.state_lock(seen_jobs_path):
+        loaded = _load_seen(seen_jobs_path)
+        if loaded is None:
+            return {
+                "connected": True,
+                "synced": 0,
+                "created": 0,
+                "updated": 0,
+                "message": f"no postings yet ({seen_jobs_path} not found) - run run-alerts first",
+            }
+        doc, seen = loaded
 
-    top_n = jobseek_config.top_n(config)
-    entries = select_entries(seen, min_score=min_score, all_=all_, top_n=top_n)
+        top_n = jobseek_config.top_n(config)
+        entries = select_entries(seen, min_score=min_score, all_=all_, top_n=top_n)
 
-    database_id = ensure_database(client, notion_cfg)
+        database_id = ensure_database(client, notion_cfg)
 
-    created = updated = 0
-    changed = False
-    for key, entry in entries:
-        properties = build_properties(key, entry)
-        existing_page_id = entry.get("notion_page_id")
-        if rebuild:
-            new_id = client.create_page(database_id, properties)
-            if existing_page_id:
-                client.archive_page(existing_page_id)
-            entry["notion_page_id"] = new_id
-            created += 1
-            changed = True
-        elif existing_page_id:
-            client.update_page(existing_page_id, properties)
-            updated += 1
-        else:
-            new_id = client.create_page(database_id, properties)
-            entry["notion_page_id"] = new_id
-            created += 1
-            changed = True
+        created = updated = 0
+        changed = False
+        for key, entry in entries:
+            properties = build_properties(key, entry)
+            existing_page_id = entry.get("notion_page_id")
+            if rebuild:
+                new_id = client.create_page(database_id, properties)
+                if existing_page_id:
+                    client.archive_page(existing_page_id)
+                entry["notion_page_id"] = new_id
+                created += 1
+                changed = True
+            elif existing_page_id:
+                client.update_page(existing_page_id, properties)
+                updated += 1
+            else:
+                new_id = client.create_page(database_id, properties)
+                entry["notion_page_id"] = new_id
+                created += 1
+                changed = True
 
-    if changed:
-        # `entry` objects came straight out of `seen` (same dicts), so the
-        # mutations above already live in `seen`/`doc` - persist as-is.
-        _save_seen(seen_jobs_path, doc)
+        if changed:
+            # `entry` objects came straight out of `seen` (same dicts), so the
+            # mutations above already live in `seen`/`doc` - persist as-is.
+            _save_seen(seen_jobs_path, doc)
 
     return {
         "connected": True,
