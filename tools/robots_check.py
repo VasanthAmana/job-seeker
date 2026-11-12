@@ -63,19 +63,26 @@ def is_robots_body(text):
     A misconfigured host can answer /robots.txt with 200 and an HTML error page.
     That body parses to zero rules, and zero rules read as "allowed" - so a
     soft-200 granted permission that was never given. An empty or whitespace-only
-    body IS a valid allow-all under RFC 9309 and stays allowed; a non-empty body
-    with no recognised directive is treated as unreadable.
+    body IS a valid allow-all under RFC 9309 and stays allowed, and so is a body
+    made up only of comment lines (RFC 9309 section 2.2: a comment is not a
+    directive, so a comment-only file publishes no rules at all - still a valid,
+    empty policy, not an unreadable one). A non-empty body with no recognised
+    directive and at least one non-comment line is treated as unreadable.
     """
     text = text.removeprefix('\ufeff')          # byte-order mark, see _groups
     if not text.strip():
         return True
+    saw_content_line = False
     for raw in text.splitlines():
         line = raw.split('#', 1)[0].strip().lower()
+        if not line:
+            continue
+        saw_content_line = True
         if ':' in line and line.split(':', 1)[0].strip() in (
             'user-agent', 'allow', 'disallow', 'sitemap', 'crawl-delay', 'host',
         ):
             return True
-    return False
+    return not saw_content_line
 
 def has_undecodable_rule(text):
     """Does a User-agent, Allow or Disallow line hold U+FFFD?

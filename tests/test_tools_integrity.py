@@ -65,6 +65,32 @@ def test_robots_rules_in_memory():
     assert robots_check.allowed(named, "Claude-User", "/jobs") is False
 
 
+def test_is_robots_body_comment_only_is_valid_empty_policy():
+    # RFC 9309: a comment is not a directive, so a comment-only file publishes
+    # no rules at all - a valid, empty (allow-all) policy, not an unreadable one.
+    comment_only = "# robots.txt\n# nothing to see here\n"
+    assert robots_check.is_robots_body(comment_only) is True
+    assert robots_check.allowed(comment_only, "Claude-User", "/jobs/director") is True
+    # Blank lines mixed with comments are still an empty policy.
+    assert robots_check.is_robots_body("\n# comment\n\n#another\n\n") is True
+
+
+def test_is_robots_body_empty_is_valid():
+    assert robots_check.is_robots_body("") is True
+    assert robots_check.is_robots_body("   \n\n   ") is True
+
+
+def test_is_robots_body_html_soft_200_is_rejected():
+    assert robots_check.is_robots_body("<html><body>404 Not Found</body></html>") is False
+
+
+def test_is_robots_body_real_directives_unchanged():
+    robots = "User-agent: *\nDisallow: /private\n"
+    assert robots_check.is_robots_body(robots) is True
+    with_comment = "# policy\nUser-agent: *\nDisallow: /private\n"
+    assert robots_check.is_robots_body(with_comment) is True
+
+
 def test_job_key_is_stable_and_path_safe():
     key = job_key.make_key("Acme Corp, Inc.", "Director, AI Strategy (Denver/Remote)", "https://a.example/1")
     assert job_key.is_canonical(key)
