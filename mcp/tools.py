@@ -36,7 +36,7 @@ import config as jobseek_config  # noqa: E402
 import gmail_alerts  # noqa: E402
 import notion_sync  # noqa: E402
 import upskill_state  # noqa: E402
-from rank_state import load_state  # noqa: E402
+from rank_state import StateError, load_state  # noqa: E402
 
 import client as linkedin_client  # noqa: E402
 
@@ -61,7 +61,10 @@ def _seen(cfg: dict | None = None) -> dict:
     state_path = jobseek_config.resolve_path(cfg, "seen_jobs")
     if not state_path.is_file():
         return {}
-    _, seen = load_state(state_path)
+    try:
+        _, seen = load_state(state_path)
+    except StateError as exc:
+        raise ToolError(str(exc)) from exc
     return seen
 
 

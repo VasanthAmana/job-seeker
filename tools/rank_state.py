@@ -46,15 +46,8 @@ import config as jobseek_config  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 
-_JOBSEEK_CONFIG = jobseek_config.load_config()
-STATE = jobseek_config.resolve_path(_JOBSEEK_CONFIG, "seen_jobs")
-TRACKER = jobseek_config.resolve_path(_JOBSEEK_CONFIG, "tracker")
-
-# profile/job-evaluation.md; overridable via jobseek/config.json's ranking.weights
-WEIGHTS = jobseek_config.ranking_weights(_JOBSEEK_CONFIG)
 BANDS = ((75, "Strong Fit"), (60, "Good Fit"), (45, "Moderate Fit"), (30, "Weak Fit"), (0, "Poor Fit"))
 
-DEFAULT_LIMIT = jobseek_config.candidate_limit(_JOBSEEK_CONFIG)
 URGENT_DAYS = 7
 ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -78,18 +71,75 @@ REASON_MAX = 200
 RETRY_FIELDS = ("fetch_attempts", "first_unreachable", "last_fetch_error")
 TIMESTAMP = "%Y-%m-%dT%H:%M:%SZ"
 
+_CONFIG_CACHE: dict | None = None
+
+
+def _config() -> dict:
+    """jobseek's config, loaded and validated on first use rather than at
+    import time.
+
+    jobseek/mcp/tools.py imports this module for `load_state` alone; eagerly
+    loading config here used to raise on import and take the MCP server down
+    before it could answer any request, on nothing worse than a bad
+    config.json (F2)."""
+    global _CONFIG_CACHE
+    if _CONFIG_CACHE is None:
+        _CONFIG_CACHE = jobseek_config.load_config()
+    return _CONFIG_CACHE
+
+
+def _default_state_path() -> Path:
+    return jobseek_config.resolve_path(_config(), "seen_jobs")
+
+
+def _default_tracker_path() -> Path:
+    return jobseek_config.resolve_path(_config(), "tracker")
+
+
+def _default_weights() -> dict:
+    # profile/job-evaluation.md; overridable via jobseek/config.json's ranking.weights
+    return jobseek_config.ranking_weights(_config())
+
+
+def _default_candidate_limit() -> int:
+    return jobseek_config.candidate_limit(_config())
+
+
+_LAZY_ATTRS = {
+    "STATE": _default_state_path,
+    "TRACKER": _default_tracker_path,
+    "WEIGHTS": _default_weights,
+    "DEFAULT_LIMIT": _default_candidate_limit,
+}
+
+
+def __getattr__(name):
+    """Back-compat for callers that still do `from rank_state import STATE,
+    TRACKER, ...` (jobseek/tools/alert_state.py): same values as the old
+    eager-at-import globals, computed on first access instead."""
+    try:
+        return _LAZY_ATTRS[name]()
+    except KeyError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+
+
+class StateError(Exception):
+    """seen_jobs.json is missing, not valid JSON, or not shaped like a job
+    map. Typed so a caller that must keep running past one bad request (the
+    MCP server) can catch it instead of the process exiting outright (F1)."""
+
 
 def load_state(path: Path) -> tuple[dict, dict]:
     """Return (document, seen-map). The map is mutated in place by callers."""
     if not path.is_file():
-        sys.exit(f"{path} not found - run the run-alerts ingest first")
+        raise StateError(f"{path} not found - run the run-alerts ingest first")
     try:
         doc = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        sys.exit(f"{path} is not valid JSON: {exc}")
+        raise StateError(f"{path} is not valid JSON: {exc}") from exc
     seen = doc.get("seen") if isinstance(doc, dict) and "seen" in doc else doc
     if not isinstance(seen, dict):
-        sys.exit(f"{path}: expected an object of job entries")
+        raise StateError(f"{path}: expected an object of job entries")
     return doc, seen
 
 
@@ -266,11 +316,12 @@ def cmd_sweep(args) -> int:
     return 0
 
 
-def overall_score(scores: dict) -> int:
+def overall_score(scores: dict, weights: dict | None = None) -> int:
     if not isinstance(scores, dict):
         raise ValueError("scores must be an object")
+    weights = weights if weights is not None else _default_weights()
     total = Fraction(0)
-    for dim, weight in WEIGHTS.items():
+    for dim, weight in weights.items():
         value = scores.get(dim)
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise ValueError(f"missing or non-numeric score '{dim}'")
@@ -515,8 +566,15 @@ def _force_utf8_output() -> None:
 
 def main(argv=None) -> int:
     _force_utf8_output()
+    try:
+        default_state = _default_state_path()
+        default_tracker = _default_tracker_path()
+        default_limit = _default_candidate_limit()
+    except jobseek_config.ConfigError as exc:
+        sys.exit(str(exc))
+
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--state", type=Path, default=STATE)
+    common.add_argument("--state", type=Path, default=default_state)
     common.add_argument("--today", type=date.fromisoformat, default=date.today())
     common.add_argument(
         "--now", type=parse_now, default=datetime.now(timezone.utc),
@@ -527,10 +585,10 @@ def main(argv=None) -> int:
     sub = ap.add_subparsers(dest="command", required=True)
 
     cand = sub.add_parser("candidates", parents=[common], help="select the entries to score")
-    cand.add_argument("--tracker", type=Path, default=TRACKER)
+    cand.add_argument("--tracker", type=Path, default=default_tracker)
     cand.add_argument("--all", action="store_true", help="include every non-skipped status")
     cand.add_argument("--focus", help="substring filter over title, company and stored fit notes")
-    cand.add_argument("--limit", type=int, default=DEFAULT_LIMIT, help="0 for no cap")
+    cand.add_argument("--limit", type=int, default=default_limit, help="0 for no cap")
     cand.set_defaults(func=cmd_candidates)
 
     sweep = sub.add_parser("sweep", parents=[common], help="expiry pass over stored deadlines, no fetch")
@@ -544,7 +602,10 @@ def main(argv=None) -> int:
     app.set_defaults(func=cmd_apply)
 
     args = ap.parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except StateError as exc:
+        sys.exit(str(exc))
 
 
 if __name__ == "__main__":

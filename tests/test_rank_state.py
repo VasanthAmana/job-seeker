@@ -200,3 +200,99 @@ def test_candidates_status_filter_and_tracker_exclusion(tmp_path, capsys):
     assert out["eligible"] == 1 and out["excluded_by_tracker"] == 1
     assert out["selected"][0]["key"] == keys[0]
     assert out["selected"][0]["source"] == "linkedin"
+
+
+# --- F1: load_state raises a typed error instead of sys.exit() -------------
+#
+# A direct sys.exit() inside load_state used to work fine for the CLI (an
+# unhandled SystemExit there is just "print the message, exit 1") but is
+# lethal for a long-running caller like the MCP server: SystemExit isn't an
+# Exception, so it skips every `except Exception` on its way out and takes
+# the whole process down on one bad seen_jobs.json. load_state must raise a
+# typed, catchable error instead, and the CLI must still behave exactly as
+# before: a clear message on stderr, exit code 1.
+
+
+def test_load_state_raises_state_error_on_truncated_json(tmp_path):
+    state = tmp_path / "seen_jobs.json"
+    state.write_text('{"seen": {truncated', encoding="utf-8")
+    with pytest.raises(rank_state.StateError, match="not valid JSON"):
+        rank_state.load_state(state)
+
+
+def test_load_state_raises_state_error_on_missing_file(tmp_path):
+    with pytest.raises(rank_state.StateError, match="not found"):
+        rank_state.load_state(tmp_path / "nope.json")
+
+
+def test_load_state_raises_state_error_on_non_object_entries(tmp_path):
+    state = tmp_path / "seen_jobs.json"
+    state.write_text(json.dumps(["not", "an", "object"]), encoding="utf-8")
+    with pytest.raises(rank_state.StateError, match="expected an object"):
+        rank_state.load_state(state)
+
+
+def test_cli_still_exits_nonzero_with_clear_message_on_truncated_json(tmp_path, capsys):
+    state = tmp_path / "seen_jobs.json"
+    state.write_text('{"seen": {truncated', encoding="utf-8")
+    with pytest.raises(SystemExit) as exc_info:
+        rank_state.main(["sweep", "--state", str(state), "--today", "2026-11-02"])
+    assert "not valid JSON" in str(exc_info.value)
+
+
+def test_cli_still_exits_nonzero_with_clear_message_on_missing_state(tmp_path, capsys):
+    state = tmp_path / "missing_seen_jobs.json"
+    with pytest.raises(SystemExit) as exc_info:
+        rank_state.main(["sweep", "--state", str(state), "--today", "2026-11-02"])
+    assert "not found" in str(exc_info.value)
+
+
+# --- F2: config is loaded lazily, not at import time ------------------------
+#
+# rank_state.py used to call jobseek_config.load_config() (and validate it)
+# as soon as the module was imported - and jobseek/mcp/tools.py imports this
+# module for `load_state` alone. A bad config.json (e.g. an empty accounts
+# list) used to raise ConfigError from that import, before the MCP server
+# ever started serving. STATE/TRACKER/WEIGHTS/DEFAULT_LIMIT must be
+# computed lazily, on demand, from config loaded per use.
+
+
+def test_importing_rank_state_does_not_touch_config(monkeypatch, tmp_path):
+    """Merely importing the module (as jobseek/mcp/tools.py does, for
+    `load_state`) must not load or validate config - a bad config.json must
+    not be able to fail this import."""
+    bad_config = tmp_path / "config.json"
+    bad_config.write_text(json.dumps({"accounts": []}), encoding="utf-8")
+    monkeypatch.setenv("JOBSEEK_CONFIG", str(bad_config))
+
+    import importlib
+    importlib.reload(rank_state)  # re-run the module body under the bad config
+    assert rank_state._CONFIG_CACHE is None
+
+
+def test_state_and_tracker_and_weights_are_computed_lazily_from_config(monkeypatch, tmp_path):
+    cfg_path = tmp_path / "config.json"
+    cfg_path.write_text(json.dumps({
+        "paths": {"seen_jobs": "custom/seen.json", "tracker": "custom/tracker.csv"},
+        "ranking": {
+            "weights": {"domain": 1.0, "leadership": 0.0, "behavioral": 0.0, "career": 0.0},
+            "candidate_limit": 3,
+        },
+    }), encoding="utf-8")
+    monkeypatch.setenv("JOBSEEK_CONFIG", str(cfg_path))
+
+    import importlib
+    importlib.reload(rank_state)
+    try:
+        assert rank_state.STATE == rank_state.ROOT / "custom" / "seen.json"
+        assert rank_state.TRACKER == rank_state.ROOT / "custom" / "tracker.csv"
+        assert rank_state.WEIGHTS == {"domain": 1.0, "leadership": 0.0, "behavioral": 0.0, "career": 0.0}
+        assert rank_state.DEFAULT_LIMIT == 3
+    finally:
+        monkeypatch.delenv("JOBSEEK_CONFIG", raising=False)
+        importlib.reload(rank_state)  # restore defaults for later tests
+
+
+def test_overall_score_accepts_explicit_weights_without_touching_config():
+    score = rank_state.overall_score({"only": 80}, weights={"only": 1.0})
+    assert score == 80
