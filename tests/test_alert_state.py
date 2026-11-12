@@ -84,6 +84,34 @@ def test_dedupe_against_tracker(tmp_path, capsys):
     assert out["selected"] == []
 
 
+def test_dedupe_ignores_tracking_params(tmp_path, capsys):
+    existing = store_ready(job("https://www.linkedin.com/jobs/view/123?currentJobId=123&trk=flagship3_search"))
+    state = tmp_path / "state" / "seen_jobs.json"
+    state.parent.mkdir(parents=True)
+    state.write_text(json.dumps({"seen": {
+        make_key(existing["company"], existing["title"], existing["url"]): existing,
+    }}), encoding="utf-8")
+
+    jobs = [job("https://www.linkedin.com/jobs/view/123?currentJobId=123&trk=nav_responsive&trkEmail=abc")]
+    rc, _ = run_tool(tmp_path, "candidates", jobs)
+    out = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert out["already_seen"] == 1
+    assert out["selected"] == []
+
+
+def test_batch_internal_duplicates_ignores_tracking_params(tmp_path, capsys):
+    jobs = [
+        job("https://www.indeed.com/viewjob?jk=abc&tk=one&from=serp"),
+        job("https://www.indeed.com/viewjob?jk=abc&tk=two&from=email"),
+    ]
+    rc, _ = run_tool(tmp_path, "candidates", jobs)
+    out = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert len(out["selected"]) == 1
+    assert out["repeated_in_batch"] == 1
+
+
 def test_batch_internal_duplicates(tmp_path, capsys):
     jobs = [job("https://example.com/jobs/1"), job("https://example.com/jobs/1/")]
     rc, _ = run_tool(tmp_path, "candidates", jobs)

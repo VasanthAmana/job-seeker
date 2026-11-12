@@ -49,6 +49,8 @@ import sys
 import unicodedata
 from pathlib import Path
 
+from url_canon import canonicalize_url
+
 ROOT = Path(__file__).resolve().parent.parent
 STATE = ROOT / "job_scraper" / "seen_jobs.json"
 
@@ -200,7 +202,7 @@ def audit(path: Path) -> int:
     legacy = [k for k in seen if is_legacy_shape(k)]
     by_url: dict[str, list[str]] = {}
     for key, entry in seen.items():
-        url = (entry.get("url") or "").rstrip("/")
+        url = canonicalize_url(entry.get("url") or "")
         if url:
             by_url.setdefault(url, []).append(key)
     duplicates = {u: ks for u, ks in by_url.items() if len(ks) > 1}

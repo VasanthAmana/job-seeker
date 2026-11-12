@@ -31,6 +31,7 @@ from urllib.parse import urlsplit
 
 from job_key import make_key
 from rank_state import STATE, TRACKER, load_state, norm, save_state, tracker_pairs
+from url_canon import canonicalize_url
 
 JOBSEEK_ROOT = Path(__file__).resolve().parent.parent
 if str(JOBSEEK_ROOT) not in sys.path:
@@ -57,7 +58,7 @@ def read_jobs(path: Path) -> list:
 
 
 def candidate_url(job: dict) -> str:
-    """A candidate's identity at ingest time is its posting URL."""
+    """A candidate's identity at ingest time is its canonicalised posting URL."""
     url = job.get("url")
     if not isinstance(url, str) or not url.strip():
         raise ValueError("job needs a non-empty url")
@@ -65,7 +66,7 @@ def candidate_url(job: dict) -> str:
     parsed = urlsplit(url)
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         raise ValueError(f"job has an invalid posting URL: {url}")
-    return url.rstrip("/")
+    return canonicalize_url(url)
 
 
 def validate_stored(job: dict) -> None:
@@ -86,7 +87,10 @@ def select(jobs: list, seen: dict, tracker: set) -> tuple[list[dict], dict]:
         if not isinstance(entry, dict):
             raise ValueError("state/seen_jobs.json contains a non-object entry")
         if isinstance(entry.get("url"), str):
-            urls.add(entry["url"].rstrip("/"))
+            # Canonicalise on read too: existing entries were stored under the
+            # old raw-URL identity, so this matches them against a fresh
+            # canonical URL without migrating state/seen_jobs.json.
+            urls.add(canonicalize_url(entry["url"]))
         pairs.add((norm(entry.get("company")), norm(entry.get("title"))))
 
     selected = []
