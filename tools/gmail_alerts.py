@@ -55,6 +55,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import config as jobseek_config  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from sources.registry import merge_email_sections  # noqa: E402
+
 DEFAULT_CONFIG = ROOT / "alert-sources.json"  # kept for callers/tests that want the built-in default directly
 GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -80,14 +84,18 @@ def tls_context():
 
 
 def load_config(path: Path) -> dict:
+    """Read `alert-sources.json` and overlay the registered sources'
+    `senders` / `posting_host_patterns` (jobseek/sources/registry.py, fixes
+    F3) under whatever the file supplies, so the file need not repeat what
+    the registry already knows."""
     try:
         config = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ValueError(f"cannot read alert-sources config {path}: {exc}") from exc
-    for field in ("senders", "subject_keywords", "posting_host_patterns", "ignore_url_markers", "employer_domains"):
+    for field in ("subject_keywords", "ignore_url_markers", "employer_domains"):
         if field not in config:
             raise ValueError(f"{path}: missing '{field}'")
-    return config
+    return merge_email_sections(config)
 
 
 def build_query(config: dict, days: int) -> str:

@@ -32,11 +32,16 @@ from urllib.parse import urlsplit
 from job_key import make_key
 from rank_state import STATE, TRACKER, load_state, norm, save_state, tracker_pairs
 
-# Fields `store` requires. `source` is the alert channel (linkedin, indeed,
-# ladders, employer, other); `first_seen` is a YYYY-MM-DD date.
+JOBSEEK_ROOT = Path(__file__).resolve().parent.parent
+if str(JOBSEEK_ROOT) not in sys.path:
+    sys.path.insert(0, str(JOBSEEK_ROOT))
+from sources.registry import SOURCE_IDS  # noqa: E402
+
+# Fields `store` requires. `source` is the alert channel - see the source
+# registry (jobseek/sources/registry.py) for the registered set.
 REQUIRED_STORE_FIELDS = ("title", "company", "url", "source", "first_seen", "status")
 STORE_STATUSES = ("new", "skipped", "expired")
-SOURCES = ("linkedin", "indeed", "ladders", "employer", "other")
+SOURCES = SOURCE_IDS
 
 
 def read_jobs(path: Path) -> list:

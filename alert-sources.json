@@ -1,20 +1,5 @@
 {
-  "_comment": "Alert sources for jobseek run-alerts (see the setup guide phases 2-5). Owner-editable: add employer alert sender addresses as they arrive. No personal data belongs here - sender addresses and domains only.",
-  "senders": {
-    "linkedin": [
-      "jobs-noreply@linkedin.com",
-      "jobalerts-noreply@linkedin.com",
-      "messages-noreply@linkedin.com"
-    ],
-    "indeed": [
-      "alert@indeed.com",
-      "noreply@indeed.com"
-    ],
-    "ladders": [
-      "alerts@theladders.com",
-      "noreply@theladders.com"
-    ]
-  },
+  "_comment": "Alert sources for jobseek run-alerts (see the setup guide phases 2-5). The registered sources' sender addresses and posting-host patterns live in the source registry (jobseek/sources/registry.py) and are merged in automatically - this file only needs what the registry can't know: the owner's target employer domains, alert-subject keywords and link-skip markers. Owner-editable: add employer alert sender addresses as they arrive. No personal data belongs here - sender addresses and domains only.",
   "subject_keywords": [
     "job alert",
     "jobs for you",
@@ -35,36 +20,6 @@
     "adventureworks.example",
     "fourthcoffee.example"
   ],
-  "posting_host_patterns": {
-    "linkedin": [
-      "linkedin.com/jobs",
-      "linkedin.com/comm/jobs"
-    ],
-    "indeed": [
-      "indeed.com/viewjob",
-      "indeed.com/rc/clk",
-      "click.indeed.com",
-      "indeed.com/pagead"
-    ],
-    "ladders": [
-      "theladders.com/job"
-    ],
-    "employer": [
-      "greenhouse.io",
-      "lever.co",
-      "myworkdayjobs.com",
-      "icims.com",
-      "smartrecruiters.com",
-      "ashbyhq.com",
-      "workable.com",
-      "taleo.net",
-      "successfactors.com",
-      "brassring.com",
-      "ultipro.com",
-      "eightfold.ai",
-      "phenompeople.com"
-    ]
-  },
   "ignore_url_markers": [
     "unsubscribe",
     "preferences",
