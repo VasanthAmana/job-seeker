@@ -1,0 +1,71 @@
+# Personal data and derived state - never committed, even though workie is
+# private. An accidental push or a pasted diff must not leak the resume,
+# the application history, Gmail message IDs, or fetched postings.
+
+# Application tracking and per-application archives
+tracker.csv
+applications/**
+!applications/.gitkeep
+
+# Seen-jobs store and run state (posting URLs, scores, Gmail-derived data)
+state/**
+!state/.gitkeep
+
+# Master resume and tailored outputs (another worker's tailor/ step writes here)
+resume/
+tailor/output/
+
+# Upskill reports (derived from the profile and postings; personal)
+upskill/report-*.md
+
+# Salary data (BYO exports; personal)
+salary_data.json
+
+# jobseek/expand's proposed profile additions: generated from the owner's
+# public GitHub/Scholar/LinkedIn/press presence, so personal by definition
+# and overwritten on every run. The profile files it proposes against ARE
+# committed; this proposal list is not.
+profile/expand-proposals.md
+
+# Real jobseek config: Gmail account folder paths, output locations, etc.
+# Commit only config.example.json (placeholder values).
+config.json
+
+# Company research cache (personal search history)
+company_research/
+
+# Fetched postings are untrusted third-party content; they are archived under
+# applications/ (covered above) or the temp dir, never committed.
+
+# Secrets of any kind
+.env
+.env.*
+*.pem
+*.keys.json
+credentials.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# LinkedIn MCP app (Node/Electron) - installed deps and packaged builds
+linkedin/app/node_modules/
+linkedin/app/dist/
+
+# LinkedIn app's own persistent session/user-data (local sign-in, never the repo's concern,
+# but guard in case LINKEDIN_MCP_USER_DATA is ever pointed in-repo during local testing)
+linkedin/app/.linkedin-mcp-data/
+
+# Captured pages (HTML + screenshots) from zero-result/failed-parse tool calls -
+# signed-in LinkedIn content, never the repo's concern. Default lives outside the
+# repo (under the app's user-data dir); guard in case LINKEDIN_MCP_CAPTURE_DIR is
+# ever pointed in-repo during local testing.
+linkedin/app/captures/

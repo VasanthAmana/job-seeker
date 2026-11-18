@@ -1,0 +1,5 @@
+date,company,sector,role,role_type,channel,status,contact_person,fit_rating,notes,cv_file,cover_letter_file,source,deadline
+2026-10-21,Acme,banking,Director AI Strategy,permanent,linkedin,applied,,30,"Wants AI governance and model-risk fluency",,,https://acme.example/jobs/1,
+2026-10-26,Delta,retail,Director AI Strategy,permanent,ladders,applied,,20,"AI strategy for store ops",,,https://delta.example/jobs/4,
+2026-10-29,Theta,healthcare,VP Digital Transformation,permanent,linkedin,prospect,,55,"Epic environment; transformation office",,,,
+2026-11-01,Mu,consulting,Chief of Staff,permanent,referral,applied,,,"Referred directly, never fit-scored",,,

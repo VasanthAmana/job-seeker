@@ -1,0 +1,30 @@
+{
+  "id": "18f2a4",
+  "threadId": "t18f2a4",
+  "internalDate": "1762000000000",
+  "payload": {
+    "mimeType": "multipart/alternative",
+    "headers": [
+      {
+        "name": "From",
+        "value": "Fabrikam Careers <careers@fabrikam.example>"
+      },
+      {
+        "name": "Subject",
+        "value": "New position matching your interests"
+      },
+      {
+        "name": "Date",
+        "value": "Sat, 1 Nov 2026 12:00:00 +0000"
+      }
+    ],
+    "parts": [
+      {
+        "mimeType": "text/html",
+        "body": {
+          "data": "PGh0bWw-PGJvZHk-CjxwPlRoYW5rIHlvdSBmb3IgeW91ciBpbnRlcmVzdCBpbiBGYWJyaWthbSBjYXJlZXJzLjwvcD4KPGEgaHJlZj0iaHR0cHM6Ly9mYWJyaWthbS53ZDEubXl3b3JrZGF5am9icy5jb20vZW4tVVMvQ2FyZWVycy9qb2IvRGVudmVyLUNPL0RpcmVjdG9yLUFJLVRyYW5zZm9ybWF0aW9uX1IwMTIzNDU2Ij5EaXJlY3RvciwgQUkgVHJhbnNmb3JtYXRpb24gLSBEZW52ZXIsIENPPC9hPgo8cD5NYW5hZ2UgeW91ciA8YSBocmVmPSJodHRwczovL2ZhYnJpa2FtLndkMS5teXdvcmtkYXlqb2JzLmNvbS9lbi1VUy9DYXJlZXJzL2xvZ2luIj5qb2IgYWxlcnRzPC9hPjwvcD4KPC9ib2R5PjwvaHRtbD4"
+        }
+      }
+    ]
+  }
+}

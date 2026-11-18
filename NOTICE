@@ -1,0 +1,166 @@
+NOTICE - third-party components in jobseek/
+
+The files listed below are copied from, or adapted from, ai-job-search
+(https://github.com/lorentzen/ai-job-search; Copyright (c) 2026 Mads
+Lorentzen), licensed under the MIT
+License:
+
+MIT License
+
+Copyright (c) 2026 Mads Lorentzen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## Copied verbatim
+
+- `tools/job_key.py` - canonical dedupe keys for postings
+- `tools/page_decode.py` - charset-aware decoding of saved pages
+- `tools/robots_check.py` - robots.txt gate (RFC 9309, fail-closed)
+- `tools/fetch_page.py` - browser-header GET retry (GET-only, robots-enforced, bounded)
+- `tools/posting_guard.py` - integrity gate for untrusted posting text
+- `tailor/tools/posting_guard.py` - copied verbatim from ai-job-search
+  tools/posting_guard.py (posting integrity gate, tailor's own copy)
+- `tailor/tools/page_decode.py` - copied verbatim from ai-job-search
+  tools/page_decode.py (dependency of posting_guard.py, tailor's own copy)
+
+## Adapted
+
+- `tools/alert_state.py` - from `tools/scrape_state.py` (dedupe candidates /
+  atomic store), rebased on alert-email ingest (URL-only candidates)
+- `tools/rank_state.py` - from `tools/rank_state.py` (ranking state machine),
+  rebased on the jobseek layout and the Director/VP rubric (seniority gate,
+  engineering-role flag, 1-10 score, one-line reason)
+- `profile/candidate-profile.md` - from
+  `.claude/skills/job-application-assistant/01-candidate-profile.md` (template structure)
+- `profile/job-evaluation.md` - from
+  `.claude/skills/job-application-assistant/04-job-evaluation.md` (gates,
+  weighted dimensions, verdict bands), specialized for Director/VP AI strategy
+- `profile/writing-style.md` - from
+  `.claude/skills/job-application-assistant/03-writing-style.md` (never-invent
+  discipline, tone rules)
+- `.claude/agents/posting-scorer.md` - from `.claude/agents/posting-scorer.md`
+  (read-only scoring agent pattern), minus the portal-CLI escalation
+- `.claude/commands/run-alerts.md` - from `.claude/commands/rank.md` (batch
+  scoring flow, trust rules, state-through-tools rule), with Gmail alert
+  ingest replacing the portal scrape
+- `tailor/tailor.md` - adapted from ai-job-search .claude/commands/apply.md
+  (drafter-reviewer workflow, never-invent standing rule, grounding audit,
+  ATS keyword check, relevance-weighted cutting; LaTeX compile loop replaced
+  by Markdown + pandoc export, cover letter replaced by the 3-line "why me"
+  outreach note)
+- `tailor/agents/resume-reviewer.md` - adapted from ai-job-search
+  .claude/agents/application-reviewer.md (read-only reviewer subagent)
+- `expand/expand.md` - adapted from ai-job-search .claude/commands/expand.md
+  (competency expansion: discovery, A/B direct-lookup-plus-inference
+  enrichment, categorized source-attributed deduplicated map, grouped
+  summary with all/review/skip confirmation, source report), rebased on a
+  Director/VP AI-strategy executive: the local-documents steps (cv/,
+  linkedin/, diplomas/, references/) are dropped entirely for public sources
+  only, the IC category list is replaced by strategic scope / board-advisory
+  / publications / speaking / press / technical depth, and the write step
+  proposes into a separate `profile/expand-proposals.md` instead of
+  appending to the profile files
+- `expand/tools/competency_map.py` - the map, categories and A/B source
+  attribution from the same command's Steps 3-5, as code
+- `expand/tools/github_source.py` - from the same command's Step 1e (GitHub
+  profile plus every public repo, not only pinned ones), through the public
+  REST API and the jobseek fetch/guard stack
+- `expand/tools/web_source.py` - from the same command's Step 1f (other URLs
+  in the profile), narrowed to quoted pointers with a standing review note
+- `tailor/tailor.md` and `tailor/README.md` also incorporate guidance text
+  from ai-job-search .claude/skills/job-application-assistant/
+  03-writing-style.md, 05-cv-templates.md and 08-application-forms.md
+- `tailor/tools/latex_templates/resume.tex.tmpl` - reimplemented from
+  ai-job-search's moderncv CV template (no local copy of the upstream file
+  was available to vendor verbatim in this environment; structure and intent
+  - moderncv `classic` style, name/address/contact header, section-per-block
+  layout - follow the upstream template)
+- `tailor/tools/latex_templates/cover.cls` - reimplemented from
+  ai-job-search's `cover.cls` why-me/cover-letter class, same reason as above
+- `tailor/tools/render_latex.py` - new renderer (Markdown -> the templates
+  above) written for jobseek's own resume Markdown shape, replacing
+  ai-job-search's own LaTeX-authoring convention
+- `tailor/tools/compile_latex.py`, `tailor/tools/verify_pdf.py`,
+  `tailor/tools/verify_layout.py` - reimplemented from ai-job-search's
+  compile-and-inspect loop and its `verify_pdf.py`/`verify_layout.py`
+  (page count, ATS text-layer presence, layout overflow/holes), adapted to
+  jobseek's export-tool exit-code conventions (0/1/2, matching
+  `export_resume.py`)
+- `tailor/tools/latex_pipeline.py` - new orchestrator tying the four files
+  above into the render/compile/verify/re-render loop; not present as a
+  single file upstream
+- `tools/notion_sync.py`, `tools/notion_client.py`,
+  `.claude/commands/notion-sync.md` - reimplemented from ai-job-search's
+  `/notion-sync` command (one-way sync of the tracker/shortlist into a
+  Notion database), rebased on jobseek's state/seen_jobs.json schema and
+  Director/VP rank fields, and on OAuth-based Notion MCP access (no stored
+  Notion API token) instead of ai-job-search's own auth approach
+- `dashboard/build.py` - from `.claude/commands/html-report.md` (status buckets,
+  stats rules, inline-SVG charts, filterable table, escaping rule), rebased on
+  jobseek's tracker/seen_jobs/last_run; adds ranked-posting rows, flags,
+  sources and follow-up due dates, and drops the outcome.md merge
+- `tools/upskill_state.py` - from `.claude/skills/upskill/SKILL.md` Steps 2-3
+  (the deterministic aggregate-mode merge: tracker/ranked dedupe on
+  company+title, fit/rank-score weights, blank-fit_rating and missing-gaps
+  skip rules), rebased on the jobseek layout and rank_state.norm
+- `upskill/upskill.md` - from `.claude/skills/upskill/SKILL.md` (skill-gap
+  heatmap, learning plan, study order, report format and trust rules),
+  specialized for a Director/VP AI-strategy search (leadership/strategy
+  competencies, not only technical skills) and rebased on jobseek's
+  state-through-tools rule
+
+The portal CLIs in ai-job-search derive from Mikkel Krogholm's skills repo
+(acknowledged in its README); none of them are copied here.
+
+## Copied verbatim, whole directory
+
+- `linkedin/app/` - copied in full from ai-job-search's `linkedin_mcp/`
+  (an Electron app holding a signed-in LinkedIn session and a cross-platform
+  stdio/local-endpoint MCP relay: `src/main.js`, `src/server.js`,
+  `src/extractors.js`, `src/pacing.js`, `src/cache.js`, `src/paths.js`,
+  `src/urls.js`, `src/format.js`, `src/tools.js`, `bin/linkedin-mcp.js`,
+  `package.json`, and its own `tests/` and fixture HTML) - unchanged in
+  behavior, tests, Windows/macOS support, and pacing/rate-limit caps; only
+  its location moved, from a standalone repo's `linkedin_mcp/` to
+  `jobseek/linkedin/app/` inside this one
+
+## Adapted, new for the jobseek integration
+
+- `linkedin/client.py` - new: a Python client that speaks the same
+  newline-delimited JSON-RPC wire format as `linkedin/app/src/server.js`
+  directly (mirrors `linkedin/app/src/paths.js`'s endpoint resolution), so
+  jobseek's tools and MCP server never have to spawn Node at call time
+- `linkedin/source.py` - new: the run-alerts LinkedIn source, mapping
+  `linkedin/app`'s `linkedin_search_jobs` results into the exact candidate
+  shape `tools/alert_state.py` already consumes (same job_key dedupe,
+  same seen_jobs.json, no parallel pipeline)
+- `mcp/tools.py`'s `linkedin_search`, `get_job`, `search_people` - new:
+  jobseek MCP passthroughs to `linkedin/client.py`
+- `.claude/commands/run-alerts.md` - extended (not rewritten) to run
+  `linkedin/source.py candidates` alongside the Gmail alert ingest
+
+## Written new for jobseek
+
+- `tools/gmail_alerts.py` - read-only Gmail alert reading and link extraction
+- `dashboard/tests/` - dashboard tests and fixtures
+- `expand/tools/read_source.py`, `profile_sources.py`, `scholar_source.py`,
+  `linkedin_source.py`, `expand_profile.py` - the gated-fetch wrapper, the
+  profile reader, the Scholar parser, the LinkedIn tool/web fallback and the
+  orchestrator; no counterpart in ai-job-search
+- `jobseek/README.md`, `jobseek/CLAUDE.md`, `alert-sources.json`, tests and fixtures

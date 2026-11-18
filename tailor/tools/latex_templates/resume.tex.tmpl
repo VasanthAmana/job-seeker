@@ -1,0 +1,30 @@
+%% jobseek LaTeX resume template (moderncv-based)
+%% Adapted from ai-job-search's moderncv CV template (MIT, see jobseek/NOTICE).
+%% Filled in by tools/render_latex.py - placeholders use an at-sign-delimited
+%% upper-snake-case token, never Python str.format() braces, so LaTeX's own
+%% {}/# syntax is never at risk of a stray substitution.
+\documentclass[11pt,a4paper,sans]{moderncv}
+\moderncvstyle{classic}
+\moderncvcolor{black}
+\usepackage[scale=0.85]{geometry}
+\usepackage[utf8]{inputenc}
+
+\name{@@FIRST_NAME@@}{@@LAST_NAME@@}
+@@TITLE_LINE@@
+\address{@@LOCATION@@}{}{}
+@@PHONE_LINE@@
+\email{@@EMAIL@@}
+@@SOCIAL_LINE@@
+
+% moderncv requires a page-break-safe single pass; the compile loop in
+% tools/latex_pipeline.py runs this twice so moderncv's own spacing macros
+% settle before verify_layout.py inspects the log.
+\begin{document}
+\makecvtitle
+
+@@SUMMARY_SECTION@@
+@@EXPERIENCE_SECTION@@
+@@EDUCATION_SECTION@@
+@@SKILLS_SECTION@@
+
+\end{document}

@@ -1,0 +1,30 @@
+{
+  "id": "18f2a2",
+  "threadId": "t18f2a2",
+  "internalDate": "1762000000000",
+  "payload": {
+    "mimeType": "multipart/alternative",
+    "headers": [
+      {
+        "name": "From",
+        "value": "Indeed <alert@indeed.com>"
+      },
+      {
+        "name": "Subject",
+        "value": "Job Alert: director \"AI strategy\""
+      },
+      {
+        "name": "Date",
+        "value": "Sat, 1 Nov 2026 10:00:00 +0000"
+      }
+    ],
+    "parts": [
+      {
+        "mimeType": "text/html",
+        "body": {
+          "data": "PGh0bWw-PGJvZHk-CjxwPkluZGVlZCBqb2IgYWxlcnQ6IGRpcmVjdG9yICJBSSBzdHJhdGVneSI8L3A-CjxhIGhyZWY9Imh0dHBzOi8vd3d3LmluZGVlZC5jb20vdmlld2pvYj9qaz1mMWEyYjNjNGQ1ZTZmNzA4Ij5WaWNlIFByZXNpZGVudCwgQUkgVHJhbnNmb3JtYXRpb248L2E-CjxzcGFuPkluaXRlY2ggLSBEZW52ZXIsIENPPC9zcGFuPgo8YSBocmVmPSJodHRwczovL3d3dy5pbmRlZWQuY29tL3ZpZXdqb2I_ams9YTliOGM3ZDZlNWY0MDMwMiI-RGlyZWN0b3Igb2YgU3RyYXRlZ2ljIEluaXRpYXRpdmVzPC9hPgo8YSBocmVmPSJodHRwczovL3ByZWZlcmVuY2VzLmluZGVlZC5jb20vdW5zdWJzY3JpYmU_dG9rZW49eHl6Ij5VbnN1YnNjcmliZTwvYT4KPC9ib2R5PjwvaHRtbD4"
+        }
+      }
+    ]
+  }
+}

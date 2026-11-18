@@ -1,0 +1,36 @@
+{
+  "_comment": "Alert sources for jobseek run-alerts (see the setup guide phases 2-5). The registered sources' sender addresses and posting-host patterns live in the source registry (jobseek/sources/registry.py) and are merged in automatically - this file only needs what the registry can't know: the owner's target employer domains, alert-subject keywords and link-skip markers. Owner-editable: add employer alert sender addresses as they arrive. No personal data belongs here - sender addresses and domains only.",
+  "subject_keywords": [
+    "job alert",
+    "jobs for you",
+    "new jobs",
+    "job opening",
+    "career opportunities",
+    "new position"
+  ],
+  "employer_domains": [
+    "woodgrovebank.example",
+    "contoso.example",
+    "fabrikam.example",
+    "litware.example",
+    "proseware.example",
+    "northwind-energy.example",
+    "tailspin.example",
+    "wingtip.example",
+    "adventureworks.example",
+    "fourthcoffee.example"
+  ],
+  "ignore_url_markers": [
+    "unsubscribe",
+    "preferences",
+    "manage-alerts",
+    "settings",
+    "privacy",
+    "terms",
+    "/help",
+    "support.",
+    "linkedin.com/comm/feed",
+    "linkedin.com/in/",
+    "addtocalendar"
+  ]
+}
