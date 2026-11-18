@@ -17,7 +17,7 @@ Pipeline". Once connected, that flow writes a token to:
 ```
 
 (or wherever `config.json`'s `notion.account_dir` points - see
-`config.example.json`.) This path is **outside** the jobseek repo folder and
+`config.example.json`.) This path is **outside** this repository and
 is never read into git; `notion_sync` only ever reads it, never writes it.
 
 No token file, or an empty/unreadable one: `notion_sync` reports
