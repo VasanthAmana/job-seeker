@@ -23,7 +23,7 @@ flowchart LR
   P10 --> P11
 ```
 
-| Phase | Delivers | MCP acceptance (in CI, fictional data) | Real-account manual check | Release |
+| Phase | Delivers | MCP acceptance (in CI, fictional data) | Real-account manual check | Release (indicative) |
 |---|---|---|---|---|
 | 0 | TypeScript toolchain, CI, MCP test harness, stub server | The harness connects and calls `status` | None | v0.0.1 |
 | 1 | Engine core, storage, Engine API, MCP server, pipeline page, setup (first cut) | Jobs, ranking, applications and the pipeline page over imported legacy fixtures | MC-1.1 legacy import of the real state | v0.1.0 |
@@ -42,7 +42,7 @@ Phases 8 and 10 can be built side by side once phase 7 ships.
 
 ## 2. Rules for every phase
 
-1. **Shippable.** Each phase ends with a tagged release that installs with `npm install -g` and, from phase 1, `job-seeker setup`, and runs on its own. Phase 0's stub server has no `setup` yet. Behaviour from earlier phases keeps working.
+1. **Shippable.** Each phase ends with a tagged release that installs with `npm install -g` and, from phase 1, `job-seeker setup`, and runs on its own. Phase 0's stub server has no `setup` yet. Releases are numbered in the order phases ship, each taking the next minor version, so the table's Release column is indicative (if phase 10 ships before phase 9 it is v0.9.0 and phase 9 is v0.10.0); phase 11 is always v1.0.0. Behaviour from earlier phases keeps working.
 2. **Accepted through MCP.** A phase is done only when its MCP acceptance scenarios (`AT-<phase>.<n>`) pass in CI and its client check passes in Claude Desktop and Codex (section 3).
 3. **Fictional data in CI; the real account only in named manual checks.**
    - Fixtures use fictional people and `example.com` or `.example.test` addresses. CI runs a fixture-hygiene scan and a secret scan.
