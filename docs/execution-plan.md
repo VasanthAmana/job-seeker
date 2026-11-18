@@ -106,7 +106,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 | Existing code | Spec tests | Port in phase | Becomes | Python retired in phase |
 |---|---|---|---|---|
 | `tools/url_canon.py`, `tools/job_key.py` | `test_url_canon` (9), `test_job_key_audit` (2), key cases in `test_tools_integrity` | 1 | `core/dedupe` | 8 |
-| `tools/posting_guard.py`, `tools/page_decode.py` (and the `tailor/tools/` copies) | guard cases in `test_tools_integrity`, `tailor/tests/test_posting_guard` (2) | 1 | `core/guard` | 8 (the `tailor/` copies in 10) |
+| `tools/posting_guard.py`, `tools/page_decode.py` (and the `tailor/tools/` copies) | guard cases in `test_tools_integrity`, `tailor/tests/test_posting_guard` (2) | 1 | `core/guard` | 9, with `upskill/`, which still calls it (the `tailor/` copies in 10) |
 | `tools/config.py` | `test_config` (17) | 1 | settings and bindings | with the Python MCP server (9 or 10), which still imports it |
 | `tools/alert_state.py` | `test_alert_state` (11), `test_state_lock` (2) | 1 | `core/jobs` ingest, leases | 8 |
 | `tools/rank_state.py` | `test_rank_state` (19) | 1 | `core/ranking` | with the Python MCP server (9 or 10), which still imports it |
@@ -406,7 +406,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
   A connector without proof stays out of the registry and its issue stays open; the phase ships with the proven ones.
 - **`notion`** (`tracker.export@1`) and the `notion_sync` tool; `NOTION_SETUP.md` updated.
 - **`github-public`** and `profile_expand_scan`, from `expand/`.
-- **Retired:** `run alerts` (its LinkedIn and Gmail halves), the posting-scorer agent, the `notion-sync` command, the Electron app shell with its socket endpoint and relay, `linkedin/client.py`, `linkedin/source.py`, every Python MCP server tool except `tailor` and `upskill_report`, and the Python modules listed for phase 8 in section 4.3. The Python MCP server stays, trimmed to those two tools. `import-legacy` stops accepting new imports.
+- **Retired:** `run alerts` (its LinkedIn and Gmail halves), the posting-scorer agent, the `notion-sync` command, the Electron app shell with its socket endpoint and relay, `linkedin/client.py`, `linkedin/source.py`, every Python MCP server tool except `tailor` and `upskill_report`, and the Python modules listed for phase 8 in section 4.3. `tools/posting_guard.py` and `tools/page_decode.py` stay for the `/upskill` workflow until phase 9. The Python MCP server stays, trimmed to those two tools. `import-legacy` stops accepting new imports.
 
 **MCP acceptance.**
 
@@ -431,7 +431,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 - **Call sites:** `research_synthesis` (`research_synthesize`, a note citing finding IDs) and `criteria_proposals` (proposals with evidence, created as pending approvals).
 - **Deterministic heuristics,** each needing a minimum number of jobs: an adjacent title that matches well but is not searched; a location that is hiring; an exclusion that vetoes too many strong jobs.
 - **MCP:** the `research_*` tools, `criteria_propose` and the `review_research` prompt. Reports and the pipeline page gain research deltas.
-- **Retired:** `tools/upskill_state.py`, `upskill/` and the Python server's `upskill_report` tool. If phase 10 has already shipped, the Python MCP server and the modules only it still imports go too.
+- **Retired:** `tools/upskill_state.py`, `upskill/`, `tools/posting_guard.py`, `tools/page_decode.py` and the Python server's `upskill_report` tool. If phase 10 has already shipped, the Python MCP server and the modules only it still imports go too.
 
 **MCP acceptance.**
 
@@ -452,7 +452,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 - **Tectonic,** downloaded and checksum-checked by `setup`; CI installs it, so the render tests the predecessor skipped now run.
 - **Tools:** `resume_prepare`, `resume_tailor` (the `resume_tailoring` call site), `resume_render` (audit, render, verify, store), `why_me_prepare`, `application_prepare`, and the `tailor_resume` and `apply_to_job` prompts. The pandoc route produces .docx from the same audited content.
 - **Ported:** the rest of `tailor/` (section 4.3); the tailor command files retire.
-- **Retired:** the Python server's `tailor` tool. If phase 9 has already shipped, the Python MCP server and the modules only it still imports go too.
+- **Retired:** the Python server's `tailor` tool and the `tailor/tools/` copies of `posting_guard.py` and `page_decode.py`. If phase 9 has already shipped, the Python MCP server and the modules only it still imports go too.
 
 **MCP acceptance.**
 
