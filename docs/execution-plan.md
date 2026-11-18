@@ -42,7 +42,7 @@ Phases 8 and 10 can be built side by side once phase 7 ships.
 
 ## 2. Rules for every phase
 
-1. **Shippable.** Each phase ends with a tagged release that installs with `npm install -g` and `job-seeker setup` and runs on its own. Behaviour from earlier phases keeps working.
+1. **Shippable.** Each phase ends with a tagged release that installs with `npm install -g` and, from phase 1, `job-seeker setup`, and runs on its own. Phase 0's stub server has no `setup` yet. Behaviour from earlier phases keeps working.
 2. **Accepted through MCP.** A phase is done only when its MCP acceptance scenarios (`AT-<phase>.<n>`) pass in CI and its client check passes in Claude Desktop and Codex (section 3).
 3. **Fictional data in CI; the real account only in named manual checks.**
    - Fixtures use fictional people and `example.com` or `.example.test` addresses. CI runs a fixture-hygiene scan and a secret scan.
@@ -85,12 +85,17 @@ Built in phase 0 and used by every later phase.
 
 The predecessor's `run alerts` workflow, its Python MCP server and its JSON state keep working until the phase that replaces each part. The user moves to the new engine one capability at a time:
 
-| Until | Still on the predecessor | Already on the new engine |
+| When | Still on the predecessor | Already on the new engine |
 |---|---|---|
 | Phase 4 ships | Everything | Nothing (demo data only) |
-| Phase 5 ships | Gmail alerts, ranking, Notion, tailor, upskill, expand | LinkedIn search, details and alerts. The LinkedIn half of `run alerts` and the Python server's three LinkedIn tools are removed |
-| Phase 8 ships | Tailor, upskill | Profile, criteria, search, Gmail alerts, ranking, applications, Notion. `run alerts`, the posting-scorer agent and the Python MCP server are removed |
-| Phase 10 ships | Nothing | Everything |
+| Phase 5 ships | `run alerts` with both its LinkedIn and Gmail ingest, ranking, the top-5 shortlist, Notion, tailor, upskill, expand, and the Python MCP server with all its tools, including its three LinkedIn tools. The predecessor's LinkedIn ingest still runs through `linkedin/client.py`, `linkedin/source.py` and the Electron app, which therefore stays installed | The new LinkedIn MCP tools (search, details, own profile, alerts), side by side with the predecessor's. The predecessor's shortlist stays the single shortlist: it ranks LinkedIn and Gmail jobs together |
+| Phase 8 ships | Tailor and upskill, on the Python MCP server trimmed to `tailor` and `upskill_report` | Profile, criteria, search, LinkedIn and Gmail alerts, ranking, the shortlist, applications, Notion. **Cutover:** `run alerts` (both halves), the posting-scorer agent, the Electron app, `linkedin/client.py`, `linkedin/source.py` and every other Python server tool are removed in the same release, and the new engine's shortlist becomes the single shortlist |
+| Phase 9 ships | Tailor, on the Python MCP server trimmed to `tailor` | Research, replacing `upskill_report` |
+| Phase 10 ships | Nothing. The Python MCP server is removed | Everything |
+
+Phases 9 and 10 can ship in either order: the Python MCP server keeps whichever of `tailor` and `upskill_report` is not yet replaced, and it is removed with the second of the two. After the phase 8 cutover its tools read the predecessor's state as it stood at the cutover; for a job found later, the user runs `/tailor` with the URL from `job_get`.
+
+From phase 5 to phase 8 the Electron app and the new connector use the same LinkedIn account with separate pacers, so the user keeps their combined page views under the daily cap of 200, by setting a lower cap on the new connector or running it by hand only.
 
 `job-seeker import-legacy` can be run again until phase 8; it merges newly seen jobs and tracker rows and skips what it already imported.
 
@@ -102,22 +107,22 @@ Test counts are the test functions in each suite today; parametrised cases add m
 |---|---|---|---|---|
 | `tools/url_canon.py`, `tools/job_key.py` | `test_url_canon` (9), `test_job_key_audit` (2), key cases in `test_tools_integrity` | 1 | `core/dedupe` | 8 |
 | `tools/posting_guard.py`, `tools/page_decode.py` (and the `tailor/tools/` copies) | guard cases in `test_tools_integrity`, `tailor/tests/test_posting_guard` (2) | 1 | `core/guard` | 8 (the `tailor/` copies in 10) |
-| `tools/config.py` | `test_config` (17) | 1 | settings and bindings | 8 |
+| `tools/config.py` | `test_config` (17) | 1 | settings and bindings | with the Python MCP server (9 or 10), which still imports it |
 | `tools/alert_state.py` | `test_alert_state` (11), `test_state_lock` (2) | 1 | `core/jobs` ingest, leases | 8 |
-| `tools/rank_state.py` | `test_rank_state` (19) | 1 | `core/ranking` | 8 |
+| `tools/rank_state.py` | `test_rank_state` (19) | 1 | `core/ranking` | with the Python MCP server (9 or 10), which still imports it |
 | `dashboard/build.py` | `dashboard/tests` (9) | 1 | the pipeline page | 8 |
-| `mcp/server.py` | `test_mcp_server` (11) | 0 and 1 | protocol error paths of the TypeScript server | 8 |
-| `mcp/tools.py` | `test_mcp_tools` (38) | 1 to 10, per tool (section 4.4) | the new MCP tools | 8 |
-| `linkedin/app/src/pacing.js`, `cache.js`, `capture.js` | `pacing`, `cache_format`, `capture` (19) | 2 | the browser host's pacer, cache and captures | 5 |
-| `linkedin/app/src/extractors.js`, `urls.js`, `format.js`, `tools.js` | `extractors`, `tools`, `server` (28) | 5 | the `linkedin` connector | 5 |
-| `linkedin/client.py`, `linkedin/source.py` | `test_linkedin_client` (15), `test_linkedin_source` (10) | 5 | criteria mapping in the connector | 5 |
+| `mcp/server.py` | `test_mcp_server` (11) | 0 and 1 | protocol error paths of the TypeScript server | trimmed in 8 and 9, removed once 9 and 10 have both shipped |
+| `mcp/tools.py` | `test_mcp_tools` (38) | 1 to 10, per tool (section 4.4) | the new MCP tools | per tool: all but `tailor` and `upskill_report` in 8, `upskill_report` in 9, `tailor` in 10 |
+| `linkedin/app/src/pacing.js`, `cache.js`, `capture.js` | `pacing`, `cache_format`, `capture` (19) | 2 | the browser host's pacer, cache and captures | 8 |
+| `linkedin/app/src/extractors.js`, `urls.js`, `format.js`, `tools.js` | `extractors`, `tools`, `server` (28) | 5 | the `linkedin` connector | 8 |
+| `linkedin/client.py`, `linkedin/source.py` | `test_linkedin_client` (15), `test_linkedin_source` (10) | 5 | criteria mapping in the connector | 8 |
 | `expand/tools/read_source.py`, `profile_sources.py`, `linkedin_source.py`, `competency_map.py` | their `expand/tests` suites (27 plus the relevant `test_expand_run` cases) | 6 | profile sources and intake | 8 |
 | `tailor/tools/grounding_audit.py` | `test_grounding_audit` (13) | 7 | `core/grounding`, shared by profile edits and resumes | 10 |
 | `tools/gmail_alerts.py`, `sources/registry.py`, `alert-sources.json` | `test_gmail_alerts` (10), `test_source_registry` (8) | 8 | `gmail` and the four alert connectors | 8 |
 | `tools/fetch_page.py`, `robots_check.py` | fetch and robots cases in `test_tools_integrity` | 8 | `web-posting` | 8 |
 | `tools/notion_client.py`, `notion_sync.py` | `test_notion_client` (7), `test_notion_sync` (15) | 8 | the `notion` connector | 8 |
 | `expand/tools/github_source.py`, `scholar_source.py`, `web_source.py`, `expand_profile.py` | the rest of `expand/tests` | 8 | `github-public` and `profile_expand_scan` | 8 |
-| `tools/upskill_state.py`, `upskill/` | `test_upskill_state` (17), `test_upskill_command` (10) | 9 | research findings | 9 |
+| `tools/upskill_state.py`, `upskill/` | `test_upskill_state` (17), `test_upskill_command` (10) | 9 | research findings | 9, with the server's `upskill_report` |
 | `tailor/tools/*` (render, compile, verify, pipeline, keywords, export) | the rest of `tailor/tests` (60) | 10 | `resume/` | 10 |
 
 ### 4.4 The predecessor's MCP tools
@@ -128,14 +133,14 @@ Test counts are the test functions in each suite today; parametrised cases add m
 | `get_posting` | `job_get` | 1 |
 | `search_seen` | `jobs_search` | 1 |
 | `dashboard` | `pipeline_page` | 1 |
-| `linkedin_search` | `search_run` with an unsaved criteria body on `linkedin` | 5 |
-| `get_job` | `job_get` with a detail fetch | 5 |
-| `search_people` | `linkedin_search_people` (manual only) | 5 |
+| `linkedin_search` | `search_run` with an unsaved criteria body on `linkedin` | 5 (old tool retired in 8) |
+| `get_job` | `job_get` with a detail fetch | 5 (old tool retired in 8) |
+| `search_people` | `linkedin_search_people` (manual only) | 5 (old tool retired in 8) |
 | `run_alerts` | `alerts_ingest` | 8 |
 | `notion_sync` | `notion_sync` | 8 |
 | `expand_profile` | `profile_expand_scan` | 8 |
-| `upskill_report` | `research_run` | 9 |
-| `tailor` | `resume_prepare`, `resume_tailor`, `resume_render` | 10 |
+| `upskill_report` | `research_run` | 9 (the trimmed Python server drops it) |
+| `tailor` | `resume_prepare`, `resume_tailor`, `resume_render` | 10 (the trimmed Python server drops it) |
 
 ## 5. Phase 0: toolchain and MCP harness
 
@@ -294,7 +299,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 - **Connector** (`connectors/linkedin/`), ported to TypeScript from the vendored app: extractors, URL builders, formatting and the "LinkedIn needs you" detection. Actions `search_jobs`, `get_job`, `recommended_jobs`, `read_own_profile` and `search_people` (`manualOnly`), and the `alerts` sync. The `tos_risk` acceptance when the binding is created.
 - **Budget planner** with the daily cap of 200, the hourly cap of 40 and the priority order (design 7.4).
 - **MCP tools.** `session_open` for LinkedIn, `search_run` and `alerts_ingest` on `linkedin`, `job_get` with a detail fetch, `profile_read_linkedin`, `linkedin_search_people`.
-- **Retired:** the Electron app shell, its socket endpoint and relay, `linkedin/client.py`, `linkedin/source.py`, the LinkedIn half of `run alerts` and the Python server's LinkedIn tools.
+- **Retired:** nothing. The new LinkedIn tools ship alongside the predecessor's LinkedIn ingest: `run alerts` keeps its LinkedIn half, the Python server keeps its LinkedIn tools, and the Electron app they depend on stays, until the phase 8 cutover (section 4.2), so the predecessor's shortlist stays the single, merged one.
 
 **MCP acceptance** (fictional LinkedIn pages served by request routing).
 
@@ -387,7 +392,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 
 ## 13. Phase 8: the other connectors
 
-**Goal.** Alerts from email, the portal issues, posting details from employer sites, Notion sync and public-profile expansion all run on the new engine, and the predecessor's alert workflow retires.
+**Goal.** Alerts from email, the portal issues, posting details from employer sites, Notion sync and public-profile expansion all run on the new engine, and the predecessor's alert workflow retires. This is the cutover of section 4.2: ranking, the shortlist and Notion move to the new engine, and LinkedIn and Gmail jobs merge into its single shortlist.
 
 **Scope.**
 
@@ -401,7 +406,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
   A connector without proof stays out of the registry and its issue stays open; the phase ships with the proven ones.
 - **`notion`** (`tracker.export@1`) and the `notion_sync` tool; `NOTION_SETUP.md` updated.
 - **`github-public`** and `profile_expand_scan`, from `expand/`.
-- **Retired:** `run alerts`, the posting-scorer agent, the `notion-sync` command, the Python MCP server and the Python modules listed for phase 8 in section 4.3. `import-legacy` stops accepting new imports.
+- **Retired:** `run alerts` (its LinkedIn and Gmail halves), the posting-scorer agent, the `notion-sync` command, the Electron app shell with its socket endpoint and relay, `linkedin/client.py`, `linkedin/source.py`, every Python MCP server tool except `tailor` and `upskill_report`, and the Python modules listed for phase 8 in section 4.3. The Python MCP server stays, trimmed to those two tools. `import-legacy` stops accepting new imports.
 
 **MCP acceptance.**
 
@@ -426,6 +431,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 - **Call sites:** `research_synthesis` (`research_synthesize`, a note citing finding IDs) and `criteria_proposals` (proposals with evidence, created as pending approvals).
 - **Deterministic heuristics,** each needing a minimum number of jobs: an adjacent title that matches well but is not searched; a location that is hiring; an exclusion that vetoes too many strong jobs.
 - **MCP:** the `research_*` tools, `criteria_propose` and the `review_research` prompt. Reports and the pipeline page gain research deltas.
+- **Retired:** `tools/upskill_state.py`, `upskill/` and the Python server's `upskill_report` tool. If phase 10 has already shipped, the Python MCP server and the modules only it still imports go too.
 
 **MCP acceptance.**
 
@@ -446,6 +452,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 - **Tectonic,** downloaded and checksum-checked by `setup`; CI installs it, so the render tests the predecessor skipped now run.
 - **Tools:** `resume_prepare`, `resume_tailor` (the `resume_tailoring` call site), `resume_render` (audit, render, verify, store), `why_me_prepare`, `application_prepare`, and the `tailor_resume` and `apply_to_job` prompts. The pandoc route produces .docx from the same audited content.
 - **Ported:** the rest of `tailor/` (section 4.3); the tailor command files retire.
+- **Retired:** the Python server's `tailor` tool. If phase 9 has already shipped, the Python MCP server and the modules only it still imports go too.
 
 **MCP acceptance.**
 
@@ -468,7 +475,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 - **Unattended match review** after every scheduled search, when switched on, within the adapter's caps.
 - **Defaults** created by `setup` (design 10.1), and retention, `job-seeker gc` and weekly maintenance (design 12.5).
 - **Other platforms:** the systemd user unit and the Windows log-on task, tested with golden files; live checks only where the user has such a machine.
-- **Clean-up:** remove the last Python code and the Python CI job; rewrite the README's install and usage sections; publish v1.0.0.
+- **Clean-up:** with the Python MCP server already gone (phases 9 and 10), remove the last Python code and the Python CI job; rewrite the README's install and usage sections; publish v1.0.0.
 
 **MCP acceptance.**
 

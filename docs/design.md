@@ -91,7 +91,7 @@ flowchart LR
 
 **Concurrency.** SQLite runs in WAL mode with short write transactions. A run is claimed with a lease row (owner, expiry, heartbeat), so the service and an MCP process never execute the same run. Each binding runs one step at a time. Each browser session is serial.
 
-**Run hand-off.** An MCP tool that starts work (`search_run`, `alerts_ingest`, `linkedin_profile_apply` and so on) writes a `queued` run and touches `run/wake` in the data directory. The service watches that file and its own 30-second tick. If the service's heartbeat is older than 15 seconds, the MCP process takes the run's lease and executes it in-process instead. Both paths run in the user's session, so both can open a headed window. If the MCP client disconnects mid-run, the lease expires and the next executor resumes the run from its step cursors. A tool can wait up to 60 seconds for a short run; otherwise it returns the run ID and the assistant follows it with `run_status`.
+**Run hand-off.** An MCP tool that starts work (`search_run`, `alerts_ingest`, `linkedin_profile_apply` and so on) writes a `queued` run and touches `run/wake` in the data directory. The service watches that file and its own 30-second schedule tick, and writes its heartbeat every 5 seconds, separately from the tick. If the service's heartbeat is older than 15 seconds, the MCP process takes the run's lease and executes it in-process instead. Both paths run in the user's session, so both can open a headed window. If the MCP client disconnects mid-run, the lease expires and the next executor resumes the run from its step cursors. A tool can wait up to 60 seconds for a short run; otherwise it returns the run ID and the assistant follows it with `run_status`.
 
 ### 3.1 Technology choices
 
@@ -196,7 +196,7 @@ job-seeker rejects a version whose quotes do not match their source spans (white
 1. `PRAGMA user_version` holds the schema version. Migrations are forward-only files, `store/migrations/NNNN_<name>.sql` or `.ts` for data moves, and each runs in a transaction.
 2. Before migrating, job-seeker writes `VACUUM INTO backups/jobseeker-v<N>-<timestamp>.db`. It refuses to open a database newer than it understands and asks the user to upgrade.
 3. Tests migrate an empty database to the latest version, and every stored fixture snapshot (one per released schema version) to the latest.
-4. `job-seeker import-legacy` reads the predecessor's `state/seen_jobs.json`, `state/last_run.json` and `tracker.csv` once, and records what it imported.
+4. `job-seeker import-legacy` reads the predecessor's `state/seen_jobs.json`, `state/last_run.json` and `tracker.csv` and records what it imported. It is repeatable and idempotent until phase 8 of the execution plan: each run merges newly seen jobs and tracker rows and skips what it already imported. From phase 8 it stops accepting new imports.
 
 ### 5.5 Secrets
 
@@ -398,7 +398,7 @@ The browser host applies these guards to every run:
 
 job-seeker never solves a CAPTCHA, types a credential or answers a security check.
 
-The `linkedin` connector reuses the vendored app's extractors, URL builders, pacing defaults, result cache, failed-parse captures and the "LinkedIn needs you" detection, ported to TypeScript. The app's Electron window and socket endpoint are replaced by the browser host. It uses the user's main account.
+The `linkedin` connector reuses the vendored app's extractors, URL builders, pacing defaults, result cache, failed-parse captures and the "LinkedIn needs you" detection, ported to TypeScript. The app's Electron window and socket endpoint are replaced by the browser host; they stay in use by the predecessor's LinkedIn ingest until phase 8 of the execution plan. It uses the user's main account.
 
 | Need | Action | Notes |
 |---|---|---|
@@ -491,7 +491,7 @@ Rules:
 
 **The whole flow from Claude Desktop or Codex.** `session_open` (LinkedIn sign-in), `profile_read_linkedin`, `profile_save_version`, `criteria_from_profile`, `approval_decide`, `search_run`, `jobs_list`, `linkedin_profile_propose`, `approval_decide`, `linkedin_profile_apply`, then `research_run`, `criteria_propose`, `schedule_set`, `resume_prepare`, `resume_render`, `application_prepare` and `application_set_state`.
 
-**Compatibility.** The predecessor's Python MCP server keeps working under its own configuration until the port retires it (execution plan, section 4). The new server uses the new tool names only.
+**Compatibility.** The predecessor's Python MCP server keeps working under its own configuration until the port retires it (execution plan, section 4). From phase 8 it is trimmed to the tools not yet replaced (`tailor` and `upskill_report`), and it is removed once phases 9 and 10 have both shipped. The new server uses the new tool names only.
 
 ## 10. Scheduler, reports and the pipeline page
 
