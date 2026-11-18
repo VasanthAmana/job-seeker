@@ -16,6 +16,7 @@ Instead it supplies what an assistant lacks:
 - **Resumes:** high-quality output from LaTeX templates.
 
 Everything is exposed to your assistant over MCP, so the assistant does the judgement and job-seeker keeps the record.
+When no assistant is connected, a few named, switchable steps (profile intake, match review, resume tailoring, research synthesis and criteria proposals) can use your own assistant CLI or an API key, and their output is always checked before it is kept.
 
 ## What it will do
 
@@ -25,6 +26,7 @@ Everything is exposed to your assistant over MCP, so the assistant does the judg
 - **Browser sessions:** one saved profile per site that runs headless. It opens a window only when a captcha or login needs you, then carries on headless.
 - **Research:** suggests the skills, roles and markets in demand for your profile.
 - **Criteria changes:** proposes new search criteria from that research, and applies them only after you approve.
+- **LinkedIn profile:** searches jobs that fit your LinkedIn profile, and updates that profile from your assistant, showing each change as a diff and applying it only after you approve.
 - **Resumes:** tailors a resume to each job from several LaTeX templates, without ever inventing experience.
 - **Applications:** your assistant submits them, and job-seeker prepares the resume and tracks the application's progress.
 - **Schedules and reports:** runs and reports on a schedule you set.
@@ -39,12 +41,12 @@ Everything is exposed to your assistant over MCP, so the assistant does the judg
 ## Design
 
 - [Design document](docs/design.md): components, data model, connector contract, browser sessions, MCP tools, scheduler and reports, and how the existing code maps onto them.
-- [Build plan](docs/build-plan.md): the phases, each independently shippable and tested.
+- [Execution plan](docs/execution-plan.md): the phases, MCP first, each ending with an acceptance test through the MCP interface.
 
 ## Status
 
 Early design. The code of its predecessor, jobseek, now lives in this repository with its history and works as it did before; the section below covers it.
-The design document and a phased build plan come next, then the new engine.
+The design document and the execution plan are in `docs/`; the new engine comes next.
 
 ## Current code (migrated from jobseek)
 
