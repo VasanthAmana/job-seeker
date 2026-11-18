@@ -1,7 +1,7 @@
 # job-seeker build plan
 
 - **Status:** proposed, for review together with [design.md](design.md). No phase starts before that review.
-- **Before phase 1:** the migration of the predecessor `jobseek` code, with its history, is merged and its CI is green.
+- **Before phase 1:** the [migration pull request](https://github.com/merkensoft-iris/job-seeker/pull/6), which moves the predecessor `jobseek` code here with its history, is merged and its CI is green.
 
 ## 1. Rules for every phase
 
@@ -79,7 +79,7 @@
 
 - **Profile.**
   - Sources: PDF through `pdftotext`, DOCX read from its XML, LaTeX, pasted text, free text and user statements. Text is extracted with character offsets.
-  - Documents: `profile@1` claims with evidence, quote validation, versions, diffs and the `intake_profile` prompt. The predecessor's profile file can be imported.
+  - Documents: `profile@1` claims with evidence, quote validation, versions, diffs and the `intake_profile` prompt. The user's filled copy of `profile/candidate-profile.md` can be imported.
   - Expansion: `profile_expand_scan` and the `github-public` connector, reshaped from `expand/`.
 - **Connector host.**
   - The manifest schema and its validation, and `connectors/registry.json`.
@@ -99,7 +99,7 @@
   - the JSON state path;
   - the legacy MCP tool aliases;
   - Notion sync;
-  - the predecessor's command files.
+  - the predecessor's Claude Code files: `.claude/commands/run-alerts.md`, `.claude/commands/notion-sync.md` and `.claude/agents/posting-scorer.md`.
 
 **Done when.**
 

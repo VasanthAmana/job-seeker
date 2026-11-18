@@ -36,6 +36,11 @@ Everything is exposed to your assistant over MCP, so the assistant does the judg
 - **Local:** data, credentials and browser profiles stay on your machine.
 - **Site rules:** it respects each site's terms and rate limits, and a captcha is always left to a person.
 
+## Design
+
+- [Design document](docs/design.md): components, data model, connector contract, browser sessions, MCP tools, scheduler and reports, and how the existing code maps onto them.
+- [Build plan](docs/build-plan.md): the phases, each independently shippable and tested.
+
 ## Status
 
 Early design. The code of its predecessor, jobseek, now lives in this repository with its history and works as it did before; the section below covers it.

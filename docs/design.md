@@ -2,7 +2,7 @@
 
 - **Status:** proposed, for review. Nothing in this document is built yet.
 - **Companion:** [build-plan.md](build-plan.md) turns this design into phases.
-- **Assumes:** the predecessor `jobseek` code is migrated with its history and its `jobseek/` folder becomes this repository's root. Paths in section 11 use that layout.
+- **Assumes:** the layout of the [migration pull request](https://github.com/merkensoft-iris/job-seeker/pull/6), which moves the predecessor `jobseek` code here with its history and makes its `jobseek/` folder this repository's root. Paths in section 11 use that layout.
 
 ## 1. Decisions at a glance
 
@@ -472,7 +472,7 @@ Paths are relative to the repository root after the migration. **Keep** means mo
 | `tools/fetch_page.py`, `robots_check.py`, `page_decode.py` | Keep | The `web-posting` connector |
 | `tools/posting_guard.py` and its copy in `tailor/tools/` | Keep one | `core/guard`. The copy is removed |
 | `tools/notion_client.py`, `notion_sync.py`, `NOTION_SETUP.md` | Retire | The assistant's own Notion connector can read the tracker through MCP. That is the principle's "put it in the assistant" |
-| `tools/upskill_state.py`, `upskill/upskill.md` | Reshape | Research `skill_gap` findings and the heatmap section of the research report. The learning-plan prose moves to the assistant's `review_research` prompt |
+| `tools/upskill_state.py`, `upskill/upskill.md`, `upskill/README.md` | Reshape | Research `skill_gap` findings and the heatmap section of the research report. The learning-plan prose moves to the assistant's `review_research` prompt |
 | `expand/tools/*`, `expand/expand.md` | Reshape | `profile_expand_scan` stores public pages as profile sources, and the `github-public` connector. The command becomes part of the `intake_profile` prompt |
 | `tailor/tools/grounding_audit.py`, `ats_keywords.py` | Keep | `resume/` audit, now checking each item against the claims it cites, and keyword coverage for `resume_prepare` |
 | `tailor/tools/render_latex.py`, `compile_latex.py`, `verify_pdf.py`, `verify_layout.py`, `latex_pipeline.py` | Keep | `resume/` render, compile and verify loop |
@@ -486,15 +486,16 @@ Paths are relative to the repository root after the migration. **Keep** means mo
 | `mcp/server.py` | Keep | Gains resources, prompts and elicitation |
 | `mcp/tools.py` | Reshape | Thin adapters over the Engine API. Old names (`run_alerts`, `rank`, `list_shortlist`, `get_posting`, `search_seen`, `linkedin_search`, `get_job`, `search_people`, `tailor`, `upskill_report`, `expand_profile`, `dashboard`) stay as aliases until phase 2 ends |
 | `dashboard/build.py` | Reshape | `reports/`: the dashboard and the per-run report pages |
-| `profile/candidate-profile.md` | Reshape | An import source for the first profile version |
-| `profile/job-evaluation.md` | Reshape | The rule ranker's gates and weights per criteria set, plus the `review_matches` prompt |
-| `profile/writing-style.md` | Reshape | The profile's `preferences.writing`, passed to the assistant by `resume_prepare` |
+| `profile/candidate-profile.example.md`, and the user's gitignored filled copy `profile/candidate-profile.md` | Reshape | The template becomes intake guidance. The filled copy is an import source for the first profile version |
+| `profile/job-evaluation.example.md` and its gitignored filled copy | Reshape | The rule ranker's gates and weights per criteria set, plus the `review_matches` prompt |
+| `profile/writing-style.example.md` and its gitignored filled copy | Reshape | The profile's `preferences.writing`, passed to the assistant by `resume_prepare` |
 | `tracker.schema.csv`, `state/`, `applications/` | Reshape | The `applications` tables, plus CSV export and the one-time legacy import |
 | `tests/` and each module's fixtures | Keep | Move next to their modules. Fixtures stay fictional |
-| The CI workflow | Reshape | Repository-root CI on Linux, macOS and Windows |
+| `.github/workflows/jobseek-tests.yml` | Reshape | CI on Linux, macOS and Windows |
 | `NOTICE` | Keep | MIT attribution for the derived files |
 | `CLAUDE.md` trust rules | Keep | Engine invariants, and the rules in section 6.5 |
-| The `run-alerts` and `notion-sync` command files (outside `jobseek/`, so not migrated) | Retire | Replaced by scheduled runs, `search_run` and the `review_matches` prompt |
+| `.claude/commands/run-alerts.md`, `.claude/commands/notion-sync.md`, `.claude/agents/posting-scorer.md` | Retire | Replaced by scheduled runs, `search_run`, `web-posting` and the `review_matches` prompt, which carries the posting scorer's gates and rubric |
+| The README's "Current code (migrated from jobseek)" section | Reshape | Replaced phase by phase with the new engine's install and usage notes |
 
 ## 12. Open questions, answered
 
