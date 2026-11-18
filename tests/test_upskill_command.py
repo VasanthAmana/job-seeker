@@ -5,15 +5,15 @@ analysis; tools/upskill_state.py owns the deterministic merge), so these
 tests pin the invariants that would break silently: the aggregate merge
 contract, the Director/VP adaptation, the report naming, and the trust
 rules. Ported from ai-job-search's tests/test_upskill_skill.py (MIT, see
-jobseek/NOTICE), rebased on the jobseek layout.
+NOTICE), rebased on the jobseek layout.
 """
 
 import unittest
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent.parent
-COMMAND = REPO / "jobseek" / "upskill" / "upskill.md"
-TRACKER_SCHEMA = REPO / "jobseek" / "tracker.schema.csv"
+REPO = Path(__file__).resolve().parent.parent
+COMMAND = REPO / "upskill" / "upskill.md"
+TRACKER_SCHEMA = REPO / "tracker.schema.csv"
 
 
 def _sections(text: str) -> dict[str, str]:
@@ -98,7 +98,7 @@ class UpskillCommandSpec(unittest.TestCase):
         # (## Gap Heatmap etc.), which the section splitter cannot tell from
         # real ones - assert the save paths against the whole spec instead.
         whole = " ".join(self.text.split())
-        self.assertIn("jobseek/upskill/report-YYYY-MM-DD.md", whole)
+        self.assertIn("upskill/report-YYYY-MM-DD.md", whole)
         self.assertIn("report-YYYY-MM-DD-<company-slug>-<role-slug>.md", whole)
 
     def test_important_rules_cover_untrusted_data_and_no_backfill(self):

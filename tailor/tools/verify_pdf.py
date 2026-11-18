@@ -2,7 +2,7 @@
 """Verify a compiled resume PDF: page count and an extractable ATS text
 layer.
 
-Reimplemented from ai-job-search's verify_pdf.py (MIT, see jobseek/NOTICE).
+Reimplemented from ai-job-search's verify_pdf.py (MIT, see NOTICE).
 Part of the compile-and-inspect loop: a PDF that fails this check is not
 shipped - tailor.md Step 6 treats a non-zero exit as "cut content and
 re-render", exactly like the existing markdown/.docx page-budget check in

@@ -1,7 +1,7 @@
 """Collect the tracker and ranked postings and render one self-contained
 HTML dashboard (inline CSS/JS/SVG, no network fetches).
 
-Ported from ai-job-search's /html-report command (MIT, see jobseek/NOTICE):
+Ported from ai-job-search's /html-report command (MIT, see NOTICE):
 status buckets, stats, SVG charts, filterable table and escaping rules come
 from there. Adapted: it reads jobseek's tracker.csv, state/seen_jobs.json and
 state/last_run.json through jobseek's config; adds ranked-posting rows
@@ -76,7 +76,7 @@ def esc(value) -> str:
 
 def default_output_path(cfg: dict | None = None) -> Path:
     """`paths.dashboard` when configured, else <state_dir>/dashboard.html
-    (state/ is gitignored). Relative paths resolve against jobseek/."""
+    (state/ is gitignored). Relative paths resolve against the repository root."""
     cfg = cfg or jobseek_config.load_config()
     if cfg.get("paths", {}).get("dashboard"):
         return jobseek_config.resolve_path(cfg, "dashboard")

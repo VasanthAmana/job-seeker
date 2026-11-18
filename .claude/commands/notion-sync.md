@@ -2,7 +2,7 @@
 
 One-way, read-only-with-respect-to-jobseek sync of the ranked shortlist into
 a "Job Search Pipeline" Notion database. Ported from ai-job-search's
-`/notion-sync` (MIT, see `jobseek/NOTICE`); see `jobseek/NOTION_SETUP.md` for
+`/notion-sync` (MIT, see `NOTICE`); see `NOTION_SETUP.md` for
 connecting Notion the first time.
 
 `$ARGUMENTS` may contain:
@@ -18,7 +18,7 @@ connecting Notion the first time.
 Run:
 
 ```bash
-python3 jobseek/tools/notion_sync.py sync   # add --min-score/--all/--rebuild per $ARGUMENTS
+python3 tools/notion_sync.py sync   # add --min-score/--all/--rebuild per $ARGUMENTS
 ```
 
 This is a deterministic tool, not a judgment call - run it once and report
@@ -26,12 +26,12 @@ its JSON output directly:
 
 - `"connected": false` -> Notion isn't connected yet. Show the `message`
   field (it names the expected token path) and point to
-  `jobseek/NOTION_SETUP.md`. This is expected, not a failure - stop here,
+  `NOTION_SETUP.md`. This is expected, not a failure - stop here,
   nothing was changed.
 - `"connected": true` with `created`/`updated`/`synced` counts -> report them
   plainly: "Synced N postings to Notion (C created, U updated)." Mention
   `database_id` the first time a database was created (worth saving to
-  `jobseek/config.json`'s `notion.database_id` per `NOTION_SETUP.md`).
+  `config.json`'s `notion.database_id` per `NOTION_SETUP.md`).
 - A non-zero exit / `"error"` field -> a genuine Notion API or configuration
   problem (e.g. no `database_id`/`parent_page_id` configured). Show the error
   verbatim; do not retry silently.

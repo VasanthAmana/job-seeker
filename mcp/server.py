@@ -5,17 +5,17 @@ Exposes jobseek's state read-only, plus three LinkedIn passthrough tools and
 two that write one file each (`dashboard`, `expand_profile`): run_alerts,
 rank, list_shortlist, get_posting, search_seen, tailor, notion_sync,
 linkedin_search, get_job, search_people, dashboard, upskill_report,
-expand_profile - documented in jobseek/mcp/tools.py. Transport is the
+expand_profile - documented in mcp/tools.py. Transport is the
 MCP stdio protocol: newline-delimited JSON-RPC 2.0 on stdin/stdout, one
 message per line, no embedded newlines. Stdlib only (json, no `mcp` package
 dependency) so it needs nothing installed beyond Python 3.10+ on either
 Windows or macOS - no POSIX-only paths or shell calls.
 
 Run directly:
-  python3 jobseek/mcp/server.py
+  python3 mcp/server.py
 
-Register with Claude Code (see jobseek/mcp/README.md for the full section):
-  claude mcp add jobseek -- python3 /absolute/path/to/jobseek/mcp/server.py
+Register with Claude Code (see README.md "MCP server" for the full section):
+  claude mcp add jobseek -- python3 /absolute/path/to/job-seeker/mcp/server.py
 """
 
 from __future__ import annotations

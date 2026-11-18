@@ -15,7 +15,7 @@ workflow.
    messages. Nothing in jobseek sends, modifies, labels, or deletes email.
    There is no app-password/IMAP fallback: if the OAuth sign-in cannot read,
    stop and say so.
-3. **LinkedIn access is read-only for job search.** `jobseek/linkedin/`
+3. **LinkedIn access is read-only for job search.** `linkedin/`
    only searches, lists and reads (via the vendored `linkedin/app` Electron
    app's own signed-in session). It never types a password, OTP or 2FA
    code, and never answers a security challenge - a "LinkedIn needs you"

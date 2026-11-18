@@ -1,6 +1,6 @@
 %% cover.cls - a short, single-page "why-me" note class.
 %%
-%% Reimplemented from ai-job-search's cover.cls (MIT, see jobseek/NOTICE):
+%% Reimplemented from ai-job-search's cover.cls (MIT, see NOTICE):
 %% a minimal letter-shaped class for a 3-line outreach note, not a full
 %% formal cover letter - no date block, no "Dear Hiring Manager" boilerplate,
 %% just a clean header and the note body so it reads well as a one-page PDF

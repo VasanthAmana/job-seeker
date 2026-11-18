@@ -13,7 +13,7 @@ MCP_DIR = Path(__file__).resolve().parent.parent / "mcp"
 if str(MCP_DIR) not in sys.path:
     sys.path.insert(0, str(MCP_DIR))
 
-import server  # jobseek/mcp/server.py
+import server  # mcp/server.py
 
 
 def test_initialize_reports_protocol_and_server_info():
@@ -148,7 +148,7 @@ def test_corrupt_seen_jobs_json_is_an_error_result_and_server_keeps_serving(jobs
 
 def test_bad_config_does_not_crash_the_server_at_startup(monkeypatch, tmp_path):
     """F2: rank_state.py used to load and validate config as soon as it was
-    imported, and jobseek/mcp/tools.py imports it for `load_state` alone -
+    imported, and mcp/tools.py imports it for `load_state` alone -
     so a bad config.json (here, an empty accounts list) used to raise
     ConfigError from that import, before the server served a single
     request. Reload the server's module chain under the bad config to

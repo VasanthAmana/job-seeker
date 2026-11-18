@@ -241,7 +241,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"  line {u['line']:>4} [{u['kind']:>6}] {u['text']!r} "
                       f"- not in sources: {missing}")
             print("Cut these, or write the confirmed fact back to "
-                  "jobseek/profile/candidate-profile.md (same turn) and re-run.")
+                  "profile/candidate-profile.md (same turn) and re-run.")
         else:
             print("grounding_audit: pass - every extracted metric, date, "
                   "title and tool is grounded in the sources")

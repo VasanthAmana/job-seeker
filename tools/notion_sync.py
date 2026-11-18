@@ -3,7 +3,7 @@
 Notion "Job Search Pipeline" database - one-way, read-only with respect to
 jobseek's own state.
 
-Ported from ai-job-search's `/notion-sync` (MIT, see jobseek/NOTICE),
+Ported from ai-job-search's `/notion-sync` (MIT, see NOTICE),
 rebased on jobseek's state/seen_jobs.json and the Director/VP rank fields
 instead of its own tracker format.
 
@@ -18,7 +18,7 @@ instead of its own tracker format.
     the owner knows to connect, and nothing in state changes.
   * **No stored Notion API token in this repo.** Authentication is the
     Notion MCP's own OAuth sign-in, read from an external account folder
-    (see jobseek/NOTION_SETUP.md) - exactly the Gmail account-folder
+    (see NOTION_SETUP.md) - exactly the Gmail account-folder
     pattern this repo already uses.
 
 Filters:
@@ -32,7 +32,7 @@ With neither --min-score nor --all, this syncs the current shortlist - the
 same ranked, non-vetoed, top-N set `list_shortlist`/`rank` return.
 
 Usage:
-  python3 jobseek/tools/notion_sync.py sync [--min-score N] [--all] [--rebuild]
+  python3 tools/notion_sync.py sync [--min-score N] [--all] [--rebuild]
 """
 
 from __future__ import annotations
@@ -140,7 +140,7 @@ def ensure_database(client, notion_cfg: dict) -> str:
     if not parent:
         raise notion_client.NotionError(
             "no notion.database_id or notion.parent_page_id configured - "
-            "set one in jobseek/config.json (see jobseek/NOTION_SETUP.md)"
+            "set one in config.json (see NOTION_SETUP.md)"
         )
     return client.create_database(parent, notion_cfg.get("database_name", "Job Search Pipeline"), DATABASE_SCHEMA)
 
@@ -168,7 +168,7 @@ def sync(
             "updated": 0,
             "message": (
                 "Notion is not connected - sign in via the Notion MCP "
-                f"(see jobseek/NOTION_SETUP.md); expected a token at "
+                f"(see NOTION_SETUP.md); expected a token at "
                 f"{notion_cfg['account_dir']}/token.json. No changes made."
             ),
         }
@@ -236,7 +236,7 @@ def main(argv: list[str] | None = None) -> int:
     sync_ap.add_argument("--min-score", type=float, default=None)
     sync_ap.add_argument("--all", action="store_true")
     sync_ap.add_argument("--rebuild", action="store_true")
-    sync_ap.add_argument("--config", type=Path, help="override jobseek/config.json")
+    sync_ap.add_argument("--config", type=Path, help="override config.json")
     args = ap.parse_args(argv)
 
     config = jobseek_config.load_config(args.config)

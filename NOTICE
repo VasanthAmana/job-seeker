@@ -1,4 +1,4 @@
-NOTICE - third-party components in jobseek/
+NOTICE - third-party components in this repository
 
 The files listed below are copied from, or adapted from, ai-job-search
 (https://github.com/lorentzen/ai-job-search; Copyright (c) 2026 Mads
@@ -46,12 +46,12 @@ SOFTWARE.
 - `tools/rank_state.py` - from `tools/rank_state.py` (ranking state machine),
   rebased on the jobseek layout and the Director/VP rubric (seniority gate,
   engineering-role flag, 1-10 score, one-line reason)
-- `profile/candidate-profile.md` - from
+- `profile/candidate-profile.example.md` - from
   `.claude/skills/job-application-assistant/01-candidate-profile.md` (template structure)
-- `profile/job-evaluation.md` - from
+- `profile/job-evaluation.example.md` - from
   `.claude/skills/job-application-assistant/04-job-evaluation.md` (gates,
   weighted dimensions, verdict bands), specialized for Director/VP AI strategy
-- `profile/writing-style.md` - from
+- `profile/writing-style.example.md` - from
   `.claude/skills/job-application-assistant/03-writing-style.md` (never-invent
   discipline, tone rules)
 - `.claude/agents/posting-scorer.md` - from `.claude/agents/posting-scorer.md`
@@ -138,7 +138,7 @@ The portal CLIs in ai-job-search derive from Mikkel Krogholm's skills repo
   `package.json`, and its own `tests/` and fixture HTML) - unchanged in
   behavior, tests, Windows/macOS support, and pacing/rate-limit caps; only
   its location moved, from a standalone repo's `linkedin_mcp/` to
-  `jobseek/linkedin/app/` inside this one
+  `linkedin/app/` inside this one
 
 ## Adapted, new for the jobseek integration
 
@@ -163,4 +163,4 @@ The portal CLIs in ai-job-search derive from Mikkel Krogholm's skills repo
   `linkedin_source.py`, `expand_profile.py` - the gated-fetch wrapper, the
   profile reader, the Scholar parser, the LinkedIn tool/web fallback and the
   orchestrator; no counterpart in ai-job-search
-- `jobseek/README.md`, `jobseek/CLAUDE.md`, `alert-sources.json`, tests and fixtures
+- `README.md`, `CLAUDE.md`, `alert-sources.json`, tests and fixtures

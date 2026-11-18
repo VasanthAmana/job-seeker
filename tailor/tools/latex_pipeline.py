@@ -3,7 +3,7 @@
 on a failed check rather than shipping a broken PDF.
 
 Option (b) of the resume-format decision (ai-job-search's moderncv route,
-MIT, see jobseek/NOTICE), ties together:
+MIT, see NOTICE), ties together:
 
   1. render_latex.py   - Markdown -> .tex (pure text transform, no subprocess)
   2. compile_latex.py  - .tex -> .pdf (first available engine)
@@ -21,7 +21,7 @@ knows to cut content and call this again.
 
 Exit codes: 0 = compiled and verified; 1 = failed (a specific, actionable
 reason on stderr); 2 = skipped (no LaTeX engine / no pdftotext - install a
-TeX distribution, see jobseek/tailor/LATEX_SETUP.md, or use
+TeX distribution, see tailor/LATEX_SETUP.md, or use
 --format markdown).
 """
 

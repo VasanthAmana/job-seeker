@@ -1,5 +1,5 @@
 {
-  "_comment": "Alert sources for jobseek run-alerts (see the setup guide phases 2-5). The registered sources' sender addresses and posting-host patterns live in the source registry (jobseek/sources/registry.py) and are merged in automatically - this file only needs what the registry can't know: the owner's target employer domains, alert-subject keywords and link-skip markers. Owner-editable: add employer alert sender addresses as they arrive. No personal data belongs here - sender addresses and domains only.",
+  "_comment": "Alert sources for jobseek run-alerts (see the setup guide phases 2-5). The registered sources' sender addresses and posting-host patterns live in the source registry (sources/registry.py) and are merged in automatically - this file only needs what the registry can't know: the owner's target employer domains, alert-subject keywords and link-skip markers. Owner-editable: add employer alert sender addresses as they arrive. No personal data belongs here - sender addresses and domains only.",
   "subject_keywords": [
     "job alert",
     "jobs for you",

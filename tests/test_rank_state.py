@@ -250,7 +250,7 @@ def test_cli_still_exits_nonzero_with_clear_message_on_missing_state(tmp_path, c
 # --- F2: config is loaded lazily, not at import time ------------------------
 #
 # rank_state.py used to call jobseek_config.load_config() (and validate it)
-# as soon as the module was imported - and jobseek/mcp/tools.py imports this
+# as soon as the module was imported - and mcp/tools.py imports this
 # module for `load_state` alone. A bad config.json (e.g. an empty accounts
 # list) used to raise ConfigError from that import, before the MCP server
 # ever started serving. STATE/TRACKER/WEIGHTS/DEFAULT_LIMIT must be
@@ -258,7 +258,7 @@ def test_cli_still_exits_nonzero_with_clear_message_on_missing_state(tmp_path, c
 
 
 def test_importing_rank_state_does_not_touch_config(monkeypatch, tmp_path):
-    """Merely importing the module (as jobseek/mcp/tools.py does, for
+    """Merely importing the module (as mcp/tools.py does, for
     `load_state`) must not load or validate config - a bad config.json must
     not be able to fail this import."""
     bad_config = tmp_path / "config.json"

@@ -2,15 +2,9 @@ name: jobseek-tests
 
 on:
   pull_request:
-    paths:
-      - "jobseek/**"
-      - ".github/workflows/jobseek-tests.yml"
   push:
     branches:
       - main
-    paths:
-      - "jobseek/**"
-      - ".github/workflows/jobseek-tests.yml"
 
 jobs:
   test:
@@ -22,20 +16,21 @@ jobs:
         with:
           python-version: "3.11"
 
-      # jobseek's own tools/MCP server are pure stdlib (see jobseek/README.md
+      # jobseek's own tools/MCP server are pure stdlib (see README.md
       # "Install"); pytest is the only extra dependency its test suites need.
       - name: Install test dependencies
         run: pip install pytest
 
-      - name: jobseek/tests
-        run: python -m pytest jobseek/tests -q
+      - name: tests
+        run: python -m pytest tests -q
 
-      - name: jobseek/expand/tests
-        working-directory: jobseek/expand
+      - name: expand/tests
+        working-directory: expand
         run: python -m pytest tests -q
 
       # 7 tests here are skipped, not failing: they need a real LaTeX engine,
       # pandoc, and pdftotext, none of which this workflow installs. See the
-      # PR description for why those tools stay out of CI.
+      # workflow's original pull request (workie PR 17) for why those tools stay
+      # out of CI.
       - name: tailor + dashboard tests
-        run: python -m pytest jobseek/tailor/tests jobseek/dashboard/tests -q
+        run: python -m pytest tailor/tests dashboard/tests -q

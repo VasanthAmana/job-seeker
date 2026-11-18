@@ -1,8 +1,9 @@
 # Writing Style Guide
 
-Template, adapted from ai-job-search's `03-writing-style.md` (MIT, see
-../NOTICE). The critical rules are methodology and apply as written; the
-owner fills the voice sections.
+Example template (copy to `writing-style.md`, which is gitignored), adapted
+from ai-job-search's `03-writing-style.md` (MIT, see ../NOTICE). The
+critical rules are methodology and apply as written; the owner fills the
+voice sections.
 
 ## Critical rules (apply to every tailored resume and outreach note)
 
@@ -34,14 +35,14 @@ owner fills the voice sections.
 
 ## The 3-line "why me" note (recruiter outreach)
 
-Drafted per application, for the owner to send on LinkedIn the same day he
-applies. Three lines, no more:
-1. the role and one sentence connecting his strongest relevant fact to it;
+Drafted per application, for the owner to send on LinkedIn the same day they
+apply. Three lines, no more:
+1. the role and one sentence connecting their strongest relevant fact to it;
 2. one concrete outcome that proves it;
 3. a specific, low-friction ask (a short call, a referral, a question).
 
 ## Owner's voice (fill in)
 
 - Words and phrasing the owner actually uses: [FILL]
-- Phrasing to avoid because it does not sound like him: [FILL]
+- Phrasing to avoid because it does not sound like them: [FILL]
 - Formality level: [FILL - e.g. "executive but plain-spoken"]

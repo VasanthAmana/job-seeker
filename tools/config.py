@@ -2,7 +2,7 @@
 """Load jobseek's configuration: Gmail account folders, alert filters,
 look-back window, ranking weights, top-N, and output paths.
 
-See `jobseek/config.example.json` for the schema and placeholder values.
+See `config.example.json` for the schema and placeholder values.
 Precedence is: built-in DEFAULTS < config.json < explicit CLI flags. A tool
 calls `load_config()` once and only falls back to a config value when the
 caller did not pass the equivalent flag (argparse defaults of `None`).
@@ -21,7 +21,7 @@ import json
 import os
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent  # jobseek/
+ROOT = Path(__file__).resolve().parent.parent  # repository root
 DEFAULT_CONFIG_PATH = ROOT / "config.json"
 EXAMPLE_CONFIG_PATH = ROOT / "config.example.json"
 
@@ -78,14 +78,14 @@ def _deep_merge(base: dict, override: dict) -> dict:
 
 
 def load_config(path: Path | str | None = None) -> dict:
-    """DEFAULTS merged with the JSON object at `path` (default jobseek/config.json).
+    """DEFAULTS merged with the JSON object at `path` (default config.json).
 
     A missing file applies DEFAULTS unchanged. A present-but-malformed file,
     or one whose top level is not a JSON object, is a ConfigError - silently
     falling back would mask a typo in the owner's own config.
 
     With no explicit `path`, the `JOBSEEK_CONFIG` environment variable is
-    checked before the jobseek/config.json default - mainly so tests and the
+    checked before the config.json default - mainly so tests and the
     MCP server can point at a fixture config without threading a CLI flag
     through every tool.
     """
@@ -126,7 +126,7 @@ def validate_config(config: dict, source: str | Path = "<config>") -> None:
 
 
 def resolve_path(config: dict, key: str) -> Path:
-    """jobseek/paths.<key>, resolved relative to jobseek/ unless already absolute."""
+    """paths.<key>, resolved relative to the repository root unless already absolute."""
     try:
         raw = config["paths"][key]
     except KeyError as exc:
@@ -212,7 +212,7 @@ def state_lock(path: Path):
 
 
 def notion_config(config: dict) -> dict:
-    """jobseek/notion.* merged with defaults - account_dir expanded to an
+    """notion.* merged with defaults - account_dir expanded to an
     absolute Path (the OAuth token folder, same shape as a Gmail account
     folder: never committed, holds no repo-tracked secret)."""
     notion = dict(DEFAULTS["notion"])

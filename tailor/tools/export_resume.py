@@ -7,7 +7,7 @@ compile-and-inspect loop (`latex_pipeline.py`: render, compile, verify page
 count/ATS text layer/layout overflow, re-render on a failed check). The
 original --format markdown route (option (a): keep the owner's .docx look
 via pandoc --reference-doc) is kept as an explicit fallback flag, not
-removed - see jobseek/tailor/README.md.
+removed - see tailor/README.md.
 
 --format markdown (this module's original behavior):
   * .docx export - pandoc with `--reference-doc <master.docx>`: pandoc takes
@@ -16,7 +16,7 @@ removed - see jobseek/tailor/README.md.
     owner's master resume is a .docx, pass it as --reference-doc and the
     tailored .docx renders in his styles. (A true in-place edit of a copy of
     his .docx needs python-docx; the reference-doc route needs nothing beyond
-    pandoc and preserves the same styles - see jobseek/tailor/README.md.)
+    pandoc and preserves the same styles - see tailor/README.md.)
   * PDF export - pandoc via the first available engine (tectonic, lualatex,
     xelatex, pdflatex, wkhtmltopdf, weasyprint), else LibreOffice
     (`soffice --headless --convert-to pdf`) on the .docx. With no engine the
@@ -28,7 +28,7 @@ With --max-pages the PDF page count is enforced via pdftotext form feeds
 
 --format latex delegates entirely to latex_pipeline.py (render_latex.py +
 compile_latex.py + verify_pdf.py + verify_layout.py) - see that module and
-jobseek/tailor/LATEX_SETUP.md for the TeX distribution it needs.
+tailor/LATEX_SETUP.md for the TeX distribution it needs.
 
 Exit codes: 0 = requested format produced (and page budget met);
 1 = page budget exceeded, layout check failed, or a requested export

@@ -1,4 +1,4 @@
-"""jobseek/linkedin/source.py: LinkedIn saved searches -> alert_state.py
+"""linkedin/source.py: LinkedIn saved searches -> alert_state.py
 candidate shape. No live LinkedIn - the client is monkeypatched to a fake
 that returns fixture job lists or raises LinkedInError, the same contract
 test_linkedin_client.py verifies against a real (fake) socket."""
@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-import source as linkedin_source  # jobseek/linkedin/source.py
+import source as linkedin_source  # linkedin/source.py
 import client as linkedin_client
 from alert_state import select
 from job_key import make_key

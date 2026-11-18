@@ -1,13 +1,13 @@
-# jobseek/expand - profile expansion from public sources
+# expand - profile expansion from public sources
 
 `expand` finds the things about the owner that are **already public** and not
-yet written down in `jobseek/profile/candidate-profile.md`: what they have
+yet written down in `profile/candidate-profile.md`: what they have
 built on GitHub, what they have published, where they have spoken, which
 boards and committees name them, who has written about them. It proposes
 those as profile additions - each one quoting the page it came from - and
 never touches the profile itself.
 
-Adapted (MIT, see `jobseek/NOTICE`) from ai-job-search's `/expand`.
+Adapted (MIT, see `NOTICE`) from ai-job-search's `/expand`.
 
 ## Two entry points
 
@@ -21,19 +21,19 @@ expand_profile(sources?: ["github", "scholar", "linkedin", "talks", "press", "bo
 **The CLI**, which is the same code:
 
 ```bash
-python3 jobseek/expand/tools/expand_profile.py --json
-python3 jobseek/expand/tools/expand_profile.py --sources github,scholar
-python3 jobseek/expand/tools/expand_profile.py --url press=https://example.com/article
+python3 expand/tools/expand_profile.py --json
+python3 expand/tools/expand_profile.py --sources github,scholar
+python3 expand/tools/expand_profile.py --url press=https://example.com/article
 ```
 
-**The Claude Code command** - `jobseek/expand/expand.md`, for the fuller
+**The Claude Code command** - `expand/expand.md`, for the fuller
 version: web-searching for talks and press the profile does not link, richer
 reasoning, and the `all`/`review`/`skip` confirmation before anything is
-written. Make it available at the workie root:
+written. Make it available at the repository root:
 
 ```bash
 mkdir -p .claude/commands
-ln -sf ../../jobseek/expand/expand.md .claude/commands/expand.md
+ln -sf ../../expand/expand.md .claude/commands/expand.md
 ```
 
 ## What it reads, and when
@@ -46,7 +46,7 @@ with nothing to scan is reported as skipped with that as the reason.
 |---|---|---|
 | GitHub | a `github.com/<user>` URL or a `- **GitHub:** <handle>` line | the public REST API: the profile, every public repo (not just pinned), each README |
 | Google Scholar | a `scholar.google.*` URL | the profile page's publication table: titles, venues, years, the citation counts Scholar shows |
-| LinkedIn | a `linkedin.com/in/<slug>` URL | `jobseek/linkedin`'s read-only `linkedin_search_people` when the vendored app is running and signed in; otherwise a plain fetch, which LinkedIn normally refuses |
+| LinkedIn | a `linkedin.com/in/<slug>` URL | `linkedin`'s read-only `linkedin_search_people` when the vendored app is running and signed in; otherwise a plain fetch, which LinkedIn normally refuses |
 | Talks / board / press / site | any other URL in the profile, classified by its label (`- **Press:** ...`) or its path (`/speakers/`, `/advisory-board/`) | a gated fetch, quoted as pointers |
 
 A URL the profile does not list can be added per run with `--url kind=URL`,
@@ -65,7 +65,7 @@ or permanently in the gitignored `config.json`:
 
 ## What it writes
 
-One file: `jobseek/profile/expand-proposals.md` (gitignored - it is derived
+One file: `profile/expand-proposals.md` (gitignored - it is derived
 from the owner's public identity and is personal by definition). It is
 **overwritten on every run**, carries a "proposed - not yet applied" header,
 and every line carries its basis and its source:
@@ -121,7 +121,7 @@ individual-contributor shape the original `/expand` uses:
 ## Layout
 
 ```
-jobseek/expand/
+expand/
 ├── README.md                  # this file
 ├── expand.md                  # the Claude Code /expand workflow
 └── tools/
@@ -138,7 +138,7 @@ jobseek/expand/
 ## Tests
 
 ```bash
-cd jobseek/expand && python3 -m pytest tests/ -q
+cd expand && python3 -m pytest tests/ -q
 ```
 
 Fixtures only. No test touches the network: every read goes through the real

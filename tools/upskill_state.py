@@ -3,8 +3,8 @@
 the weighted job list the skill-gap heatmap is built from.
 
 Adapted from the deterministic parts of ai-job-search's
-`.claude/skills/upskill/SKILL.md` Steps 2-3 (MIT, see jobseek/NOTICE). The
-markdown spec at `jobseek/upskill/upskill.md` remains the implementation of
+`.claude/skills/upskill/SKILL.md` Steps 2-3 (MIT, see NOTICE). The
+markdown spec at `upskill/upskill.md` remains the implementation of
 the analysis itself (skill extraction, profile diff, synthesis, learning
 plan); this tool owns the merge so the conversation never hand-reads state
 files - the same "state moves through tools" rule `rank_state.py` follows:
@@ -28,10 +28,10 @@ files - the same "state moves through tools" rule `rank_state.py` follows:
     back-filled from its title.
 
 Stored gap bullets are untrusted third-party posting text (see
-jobseek/CLAUDE.md trust rule 1): this tool carries them, never acts on them.
+CLAUDE.md trust rule 1): this tool carries them, never acts on them.
 
 Usage:
-  python3 jobseek/tools/upskill_state.py aggregate [--state PATH] [--tracker PATH]
+  python3 tools/upskill_state.py aggregate [--state PATH] [--tracker PATH]
       [--reports-dir DIR] [--today YYYY-MM-DD] [--floor N]
 
 Prints JSON on stdout. Exit 0 on success, 1 on a usage or state-format error.

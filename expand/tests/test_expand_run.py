@@ -11,7 +11,7 @@ PROFILE = FIXTURES / "candidate-profile.md"
 
 
 def no_linkedin_client():
-    """Stand in for a checkout without jobseek/linkedin/client.py.
+    """Stand in for a checkout without linkedin/client.py.
 
     The default loader reads that file off disk and would then try the live
     app's local socket, which makes the result depend on whether the owner
@@ -154,7 +154,7 @@ def test_linkedin_without_the_client_is_skipped_honestly(tmp_path):
 
 
 def test_linkedin_with_the_client_but_no_running_app_is_skipped_honestly(tmp_path):
-    """The shipped path: jobseek/linkedin/client.py exists, the app does not."""
+    """The shipped path: linkedin/client.py exists, the app does not."""
     import types
 
     def loader():

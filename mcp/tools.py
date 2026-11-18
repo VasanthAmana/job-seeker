@@ -15,7 +15,7 @@ offline HTML dashboard, and `expand_profile` reads public web sources
 (GET-only, robots-gated, `posting_guard`-scanned) and writes the gitignored
 `profile/expand-proposals.md`. `expand_profile` never writes to any other
 path, and in particular never to `profile/candidate-profile.md` - see
-jobseek/expand/tools/expand_profile.py.
+expand/tools/expand_profile.py.
 """
 
 from __future__ import annotations
@@ -42,8 +42,8 @@ import client as linkedin_client  # noqa: E402
 
 
 # Source types `expand_profile` accepts, kept in step with
-# jobseek/expand/tools/profile_sources.py without importing it at module
-# import time (jobseek/expand is optional in a partial checkout).
+# expand/tools/profile_sources.py without importing it at module
+# import time (expand is optional in a partial checkout).
 EXPAND_SOURCE_KINDS = ("github", "scholar", "linkedin", "talks", "press", "board", "site")
 
 
@@ -175,10 +175,10 @@ def search_seen(query: str) -> dict:
 
 
 def tailor(job_id: str) -> dict:
-    """Ground `jobseek/tailor`'s drafter-reviewer workflow on one stored
+    """Ground `tailor`'s drafter-reviewer workflow on one stored
     posting.
 
-    jobseek/tailor/tailor.md is a Claude Code slash-command workflow (a
+    tailor/tailor.md is a Claude Code slash-command workflow (a
     drafter-reviewer loop over the resume, not a deterministic script), so
     this tool is read-only prep: it looks up the posting and returns the
     paths and the `/tailor` invocation to run in a Claude Code session,
@@ -193,7 +193,7 @@ def tailor(job_id: str) -> dict:
         "writing_style": str(JOBSEEK_ROOT / "profile" / "writing-style.md"),
         "invoke": f"/tailor {entry.get('url', '')}",
         "note": (
-            "jobseek/tailor is an interactive drafter-reviewer workflow "
+            "tailor is an interactive drafter-reviewer workflow "
             "(tailor.md), not a deterministic script - run the `invoke` "
             "command in a Claude Code session to actually draft anything."
         ),
@@ -210,7 +210,7 @@ def linkedin_search(
     limit: int | None = None,
 ) -> dict:
     """Run a live LinkedIn Jobs search through the signed-in linkedin-mcp
-    app (jobseek/linkedin/app/) - the same saved-search shape `run-alerts`
+    app (linkedin/app/) - the same saved-search shape `run-alerts`
     replays from config, available here for an ad-hoc query. Raises
     ToolError with a "LinkedIn needs you"-style message when the app isn't
     running or isn't signed in, instead of a raw connection failure."""
@@ -270,7 +270,7 @@ def notion_sync_tool(min_score: float | None = None, all: bool | None = None, re
 def dashboard(open: bool = False) -> dict:
     """Regenerate the offline HTML dashboard and return its path (opens it
     with the platform default when `open` is true). Writes only the
-    dashboard file; see jobseek/dashboard/."""
+    dashboard file; see dashboard/."""
     if str(JOBSEEK_ROOT) not in sys.path:
         sys.path.insert(0, str(JOBSEEK_ROOT))
     from dashboard import build_dashboard
@@ -280,7 +280,7 @@ def dashboard(open: bool = False) -> dict:
 
 
 def upskill_report() -> dict:
-    """The aggregate dataset `jobseek/upskill`'s /upskill workflow analyses:
+    """The aggregate dataset `upskill`'s /upskill workflow analyses:
     tracker rows merged with ranked postings (deduped, weighted, recorded
     gaps preferred over inference), plus the profile path, the previous
     report for the diff, and where the new report is saved.
@@ -295,7 +295,7 @@ def upskill_report() -> dict:
     payload["upskill_command_file"] = str(JOBSEEK_ROOT / "upskill" / "upskill.md")
     payload["invoke"] = "/upskill"
     payload["note"] = (
-        "jobseek/upskill is an interactive analysis workflow (upskill.md), "
+        "upskill is an interactive analysis workflow (upskill.md), "
         "not a deterministic script - run the `invoke` command in a Claude "
         "Code session to build the heatmap, learning plan and report."
     )
@@ -321,7 +321,7 @@ def expand_profile(sources: list[str] | None = None) -> dict:
     """
     expand_tools = JOBSEEK_ROOT / "expand" / "tools"
     if not (expand_tools / "expand_profile.py").is_file():
-        raise ToolError("jobseek/expand is not installed in this checkout")
+        raise ToolError("expand is not installed in this checkout")
     if str(expand_tools) not in sys.path:
         sys.path.insert(0, str(expand_tools))
     import expand_profile as expand_impl  # noqa: PLC0415 - kept local so mcp/tools.py imports without expand/
@@ -343,7 +343,7 @@ TOOLS = {
         {
             "type": "object",
             "properties": {
-                "account": {"type": "string", "description": "named account from jobseek/config.json (default: config's default_account)"},
+                "account": {"type": "string", "description": "named account from config.json (default: config's default_account)"},
                 "days": {"type": "integer", "minimum": 1, "description": "look-back window in days (default: from config)"},
             },
             "additionalProperties": False,
@@ -479,10 +479,10 @@ TOOL_DESCRIPTIONS = {
     "list_shortlist": "Return the shortlist from the most recent /run-alerts run.",
     "get_posting": "Look up one stored posting by its key.",
     "search_seen": "Search stored postings by title/company/reason/location substring.",
-    "tailor": "Ground the jobseek/tailor workflow on one stored posting (read-only prep; drafting itself runs as a Claude Code /tailor session).",
+    "tailor": "Ground the tailor workflow on one stored posting (read-only prep; drafting itself runs as a Claude Code /tailor session).",
     "notion_sync": "One-way sync of the ranked shortlist (or everything) into the \"Job Search Pipeline\" Notion database; no-ops cleanly when Notion isn't connected.",
     "linkedin_search": "Run a live LinkedIn Jobs search through the signed-in linkedin-mcp app; raises a clear \"LinkedIn needs you\" error if the app isn't running or signed in.",
-    "get_job": "Fetch one full LinkedIn job posting by id or URL via the signed-in linkedin-mcp app (outreach/ad-hoc use; passthrough to jobseek/linkedin).",
+    "get_job": "Fetch one full LinkedIn job posting by id or URL via the signed-in linkedin-mcp app (outreach/ad-hoc use; passthrough to linkedin).",
     "search_people": "LinkedIn people search (recruiter/hiring-manager outreach prep) via the signed-in linkedin-mcp app; read-only, no connect/message/follow.",
     "dashboard": "Regenerate the offline HTML pipeline dashboard (tracker + ranked postings) and return its file path.",
     "expand_profile": "Scan the public sources the candidate profile names (GitHub, Scholar, LinkedIn, talks/board/press pages) and write source-attributed proposed profile additions to profile/expand-proposals.md. Never edits the profile itself.",

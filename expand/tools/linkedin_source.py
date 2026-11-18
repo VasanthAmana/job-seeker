@@ -4,7 +4,7 @@
 Two paths, tried in that order, and the proposals file always says which one
 ran:
 
-1. **`jobseek/linkedin/client.py`** - the Python client for the vendored
+1. **`linkedin/client.py`** - the Python client for the vendored
    LinkedIn MCP app. When the app is running and signed in, this module
    calls its read-only `linkedin_search_people` tool and takes the owner's
    public headline from the result. That catalogue has no "read my own
@@ -13,7 +13,7 @@ ran:
    strongest signal available through it. `linkedin_save_job`, the app's one
    write, is never called.
 2. **`read_source.read_url()`** - the same robots-gated, bounded,
-   `posting_guard`-scanned GET the rest of `jobseek/expand` uses.
+   `posting_guard`-scanned GET the rest of `expand` uses.
 
 LinkedIn blocks naive fetching hard, so path 2 normally comes back refused.
 That is reported as a skipped source with LinkedIn's own reason, and the run
@@ -41,12 +41,12 @@ PEOPLE_SEARCH_LIMIT = 10
 
 
 def load_client():
-    """`jobseek/linkedin/client.py` as a module, or None when it is absent.
+    """`linkedin/client.py` as a module, or None when it is absent.
 
     Imported by path rather than by name, for two reasons: the module name
-    `client` is too generic to rely on finding on `sys.path` (jobseek/mcp
-    puts `jobseek/linkedin/` there, but nothing else does), and a checkout
-    without `jobseek/linkedin/` must still run the rest of this scan rather
+    `client` is too generic to rely on finding on `sys.path` (mcp
+    puts `linkedin/` there, but nothing else does), and a checkout
+    without `linkedin/` must still run the rest of this scan rather
     than fail to import.
     """
     if not CLIENT_PATH.is_file():
@@ -121,7 +121,7 @@ def scan(url: str, *, name: str = "", reader=read_url, client=None, client_loade
     slug = _slug(url)
     needs_review: list = []
     client = client if client is not None else client_loader()
-    tool_reason = ("jobseek/linkedin/client.py is not present in this checkout - "
+    tool_reason = ("linkedin/client.py is not present in this checkout - "
                    "the LinkedIn MCP tool path was not available")
     if client is not None:
         signals, tool_reason = _tool_path(client, url, name, slug)
@@ -134,7 +134,7 @@ def scan(url: str, *, name: str = "", reader=read_url, client=None, client_loade
         needs_review.append(
             "LinkedIn: nothing was read. LinkedIn blocks unauthenticated fetching, so this is the "
             "expected outcome without the jobseek LinkedIn app running. Add LinkedIn facts by hand, "
-            "or start the app (see jobseek/linkedin/app/README.md) and re-run.")
+            "or start the app (see linkedin/app/README.md) and re-run.")
         return [], [SourceReport("linkedin", url, "skipped",
                                  reason=f"{tool_reason}; web fetch: {read.reason}")], needs_review
 

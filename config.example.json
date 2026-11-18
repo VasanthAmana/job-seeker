@@ -59,7 +59,7 @@
   },
 
   "linkedin": {
-    "_comment": "The same saved searches you created by hand in LinkedIn's own UI (jobseek/linkedin/app's `linkedin_list_job_alerts` can read them back) - run-alerts replays them as a LinkedIn source feeding the same dedupe store as the Gmail alerts. The linkedin-mcp app (jobseek/linkedin/app/) must be running and signed in; see jobseek/README.md.",
+    "_comment": "The same saved searches you created by hand in LinkedIn's own UI (linkedin/app's `linkedin_list_job_alerts` can read them back) - run-alerts replays them as a LinkedIn source feeding the same dedupe store as the Gmail alerts. The linkedin-mcp app (linkedin/app/) must be running and signed in; see README.md.",
     "saved_searches": [
       {
         "name": "denver-director-vp",

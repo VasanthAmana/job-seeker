@@ -1,8 +1,8 @@
-"""jobseek/linkedin/client.py: endpoint resolution and the wire protocol.
+"""linkedin/client.py: endpoint resolution and the wire protocol.
 
 No live LinkedIn, no Electron. The "real app" side of the wire is a tiny
 fake UNIX-socket JSON-RPC server started in-process (mirrors
-jobseek/linkedin/app/src/server.js's framing exactly: newline-delimited
+linkedin/app/src/server.js's framing exactly: newline-delimited
 JSON-RPC, {"content": [...], "isError": bool} tool results) - offline, no
 network. Windows named-pipe behavior is exercised only at the path-string
 level (resolve_endpoint), since a POSIX test runner cannot open one.
@@ -16,7 +16,7 @@ import threading
 
 import pytest
 
-import client as linkedin_client  # jobseek/linkedin/client.py
+import client as linkedin_client  # linkedin/client.py
 
 
 # --- endpoint resolution -----------------------------------------------------

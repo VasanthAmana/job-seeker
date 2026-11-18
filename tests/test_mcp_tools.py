@@ -16,7 +16,7 @@ MCP_DIR = Path(__file__).resolve().parent.parent / "mcp"
 if str(MCP_DIR) not in sys.path:
     sys.path.insert(0, str(MCP_DIR))
 
-import tools as mcp_tools  # the jobseek/mcp/tools.py module
+import tools as mcp_tools  # the mcp/tools.py module
 import config as jobseek_config
 from job_key import make_key
 
@@ -24,7 +24,7 @@ from job_key import make_key
 @pytest.fixture()
 def jobseek_config_file(tmp_path, monkeypatch):
     """Point the whole config system at an isolated state/tracker/last_run
-    under tmp_path, so tests never touch the real jobseek/state."""
+    under tmp_path, so tests never touch the real state."""
     state_dir = tmp_path / "state"
     state_dir.mkdir()
     cfg_path = tmp_path / "config.json"

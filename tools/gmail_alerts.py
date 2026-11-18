@@ -3,7 +3,7 @@
 
 The owner's job search sources by email: LinkedIn, Indeed and Ladders alerts
 plus employer career-site notifications land in one Gmail mailbox (see
-jobseek/README.md). This tool lists those alert messages, decodes their
+README.md). This tool lists those alert messages, decodes their
 bodies, and pulls out the links that plausibly point at job postings, so the
 `run-alerts` command can fetch, gate, dedupe and rank them.
 
@@ -25,10 +25,10 @@ links are extracted and reported, never opened here, and a subject or body
 that reads like an instruction is still just text in the output JSON.
 
 Usage:
-  python3 jobseek/tools/gmail_alerts.py alerts [--days 7] [--limit 50]
-          [--account-dir ~/.gmail-mcp/personal] [--config jobseek/alert-sources.json]
-  python3 jobseek/tools/gmail_alerts.py extract --message-json FILE   # offline: one saved
-          [--config jobseek/alert-sources.json]                       # messages.get resource
+  python3 tools/gmail_alerts.py alerts [--days 7] [--limit 50]
+          [--account-dir ~/.gmail-mcp/personal] [--config alert-sources.json]
+  python3 tools/gmail_alerts.py extract --message-json FILE   # offline: one saved
+          [--config alert-sources.json]                       # messages.get resource
 
 `alerts` prints one JSON object: {"query", "message_count", "messages": [...]}.
 Each message: {"id", "from", "subject", "date", "source", "links": [{"url",
@@ -85,7 +85,7 @@ def tls_context():
 
 def load_config(path: Path) -> dict:
     """Read `alert-sources.json` and overlay the registered sources'
-    `senders` / `posting_host_patterns` (jobseek/sources/registry.py, fixes
+    `senders` / `posting_host_patterns` (sources/registry.py, fixes
     F3) under whatever the file supplies, so the file need not repeat what
     the registry already knows."""
     try:
@@ -285,7 +285,7 @@ def _access_token(account_dir: Path) -> str:
         raise RuntimeError(
             f"cannot read Gmail OAuth files in {d}: {exc}. "
             "Create them with `npx @gongrzhe/server-gmail-autoauth-mcp auth` "
-            "(see workie docs/google-services-setup.md)."
+            "(see README.md, \"First-time setup\")."
         ) from exc
     scope = creds.get("scope") or ""
     if scope and not any(s in scope.split() for s in READ_SCOPES):
@@ -319,7 +319,7 @@ def _gmail_get(token: str, path: str, params: dict | None = None) -> dict:
 
 
 def _resolve_run_settings(args):
-    """Merge jobseek/config.json with this run's CLI flags (flags win)."""
+    """Merge config.json with this run's CLI flags (flags win)."""
     jcfg = jobseek_config.load_config(args.jobseek_config)
     if args.account_dir is not None:
         account_dir = args.account_dir
@@ -397,10 +397,10 @@ def main(argv=None) -> int:
     alerts = sub.add_parser("alerts", help="list alert emails and extract posting links (read-only)")
     alerts.add_argument("--days", type=int, default=None, help="look-back window (default: from config, else 7)")
     alerts.add_argument("--limit", type=int, default=None, help="max messages to read (default: from config, else 50)")
-    alerts.add_argument("--account", help="named account from jobseek/config.json (default: config's default_account)")
+    alerts.add_argument("--account", help="named account from config.json (default: config's default_account)")
     alerts.add_argument("--account-dir", type=Path, default=None, help="overrides --account and the config entirely")
     alerts.add_argument("--config", type=Path, default=None, help="alert-sources.json path (default: from jobseek config)")
-    alerts.add_argument("--jobseek-config", type=Path, default=None, help="jobseek config.json path (default: jobseek/config.json)")
+    alerts.add_argument("--jobseek-config", type=Path, default=None, help="jobseek config.json path (default: config.json)")
     alerts.add_argument("--query", help="override the generated Gmail query")
     alerts.set_defaults(func=cmd_alerts)
 

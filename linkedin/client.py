@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Python client for the vendored LinkedIn MCP app's local endpoint.
 
-`jobseek/linkedin/app/` is the Electron app (see its own README): it holds a
+`linkedin/app/` is the Electron app (see its own README): it holds a
 signed-in LinkedIn session and serves a small MCP tool catalogue
 (`linkedin_search_jobs`, `linkedin_get_job`, `linkedin_list_job_alerts`,
 `linkedin_list_saved_jobs`, `linkedin_search_people`, `linkedin_save_job`,
@@ -19,7 +19,7 @@ client at the same `LINKEDIN_MCP_SOCKET` is how tests exercise this file
 against a real (but fake) endpoint with no live LinkedIn involved.
 
 The app is a separate process the owner starts by hand (`npm start` in
-`jobseek/linkedin/app/`) and signs into once; this client never launches it
+`linkedin/app/`) and signs into once; this client never launches it
 and never touches LinkedIn credentials itself. Every failure to reach the
 endpoint, or any "LinkedIn needs you" result the app itself returns (sign-in
 wall, security challenge), is surfaced as `LinkedInNeedsYouError` with a
@@ -98,7 +98,7 @@ def is_windows_pipe(endpoint: str) -> bool:
 
 NOT_RUNNING_HINT = (
     "LinkedIn needs you: the linkedin-mcp app isn't running (or hasn't finished signing in). "
-    "Start it with `npm start` in jobseek/linkedin/app, sign in to LinkedIn by hand in the "
+    "Start it with `npm start` in linkedin/app, sign in to LinkedIn by hand in the "
     "window that opens, then retry."
 )
 

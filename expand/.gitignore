@@ -4,5 +4,5 @@ __pycache__/
 .pytest_cache/
 
 # Scratch output from ad-hoc runs (the default output is the gitignored
-# jobseek/profile/expand-proposals.md instead)
+# profile/expand-proposals.md instead)
 out/

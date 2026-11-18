@@ -2,21 +2,21 @@
 """LinkedIn saved-search source for `/run-alerts`.
 
 Runs the owner's configured LinkedIn saved searches (query, locations,
-experience levels, remote) through the vendored `jobseek/linkedin/app`
-Electron app's signed-in session, via `jobseek/linkedin/client.py`, and
+experience levels, remote) through the vendored `linkedin/app`
+Electron app's signed-in session, via `linkedin/client.py`, and
 emits candidate links in the exact shape `tools/alert_state.py` already
 consumes. This is a new *source* feeding the SAME dedupe store the
 Gmail-alert path writes to - same job_key scheme, same seen_jobs.json, same
 downstream fetch/guard/rank/tailor/notion_sync stages - never a parallel
 pipeline.
 
-Saved searches come from `jobseek/config.json`'s `linkedin.saved_searches`
+Saved searches come from `config.json`'s `linkedin.saved_searches`
 (see `tools/config.py:linkedin_saved_searches` and
 `config.example.json`) - the same config file the Gmail path already reads,
 never a separate one.
 
 Usage:
-  python3 jobseek/linkedin/source.py candidates [--jobseek-config PATH]
+  python3 linkedin/source.py candidates [--jobseek-config PATH]
 
 Prints one JSON object:
   {"searches": N, "jobs": M, "links": [...], "errors": [...]}`

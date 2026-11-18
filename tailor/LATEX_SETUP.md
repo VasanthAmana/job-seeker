@@ -9,7 +9,7 @@ ATS-text-layer check) on `PATH`. Nothing here needs network access at
 tailor-time - the distribution itself is a one-time local install.
 
 If you'd rather skip this entirely, pass `--format markdown` (see
-`jobseek/tailor/README.md`) - the owner's original .docx/PDF pandoc route,
+`tailor/README.md`) - the owner's original .docx/PDF pandoc route,
 no TeX distribution required.
 
 ## macOS

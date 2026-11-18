@@ -2,7 +2,7 @@
 """State helper for `run-alerts` ranking: select candidates and write results
 back.
 
-Adapted from ai-job-search's tools/rank_state.py (MIT, see jobseek/NOTICE).
+Adapted from ai-job-search's tools/rank_state.py (MIT, see NOTICE).
 The state machine is the same - candidate selection, result apply, deadline
 sweep, unreachable-retry, atomic writes - rebased onto the jobseek layout
 (state/seen_jobs.json, tracker.csv) and the Director/VP rubric in
@@ -22,9 +22,9 @@ Nothing here fetches a posting or judges a fit. Scoring stays with the model;
 this only removes the state file from the conversation.
 
 Usage:
-  python3 jobseek/tools/rank_state.py candidates [--all] [--focus TEXT] [--limit N]
-  python3 jobseek/tools/rank_state.py sweep [--write] [--exclude KEY,KEY]
-  python3 jobseek/tools/rank_state.py apply --results results.json [--dry-run] [--now ISO-DATETIME]
+  python3 tools/rank_state.py candidates [--all] [--focus TEXT] [--limit N]
+  python3 tools/rank_state.py sweep [--write] [--exclude KEY,KEY]
+  python3 tools/rank_state.py apply --results results.json [--dry-run] [--now ISO-DATETIME]
 
 All subcommands print JSON on stdout. Exit 0 on success, 1 on a usage or
 state error, or on `apply` when any result could not be written.
@@ -78,7 +78,7 @@ def _config() -> dict:
     """jobseek's config, loaded and validated on first use rather than at
     import time.
 
-    jobseek/mcp/tools.py imports this module for `load_state` alone; eagerly
+    mcp/tools.py imports this module for `load_state` alone; eagerly
     loading config here used to raise on import and take the MCP server down
     before it could answer any request, on nothing worse than a bad
     config.json (F2)."""
@@ -97,7 +97,7 @@ def _default_tracker_path() -> Path:
 
 
 def _default_weights() -> dict:
-    # profile/job-evaluation.md; overridable via jobseek/config.json's ranking.weights
+    # profile/job-evaluation.md; overridable via config.json's ranking.weights
     return jobseek_config.ranking_weights(_config())
 
 
@@ -115,7 +115,7 @@ _LAZY_ATTRS = {
 
 def __getattr__(name):
     """Back-compat for callers that still do `from rank_state import STATE,
-    TRACKER, ...` (jobseek/tools/alert_state.py): same values as the old
+    TRACKER, ...` (tools/alert_state.py): same values as the old
     eager-at-import globals, computed on first access instead."""
     try:
         return _LAZY_ATTRS[name]()

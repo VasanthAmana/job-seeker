@@ -8,7 +8,7 @@ Now all three read `SOURCE_IDS` / `REGISTRY` from here.
 
 This is deliberately a small subset of the full per-portal manifest the
 report's section 3.2 designs for onboarding *new* portals (each with its own
-`jobseek/sources/<id>/` directory, fixtures and tests) - it only has to
+`sources/<id>/` directory, fixtures and tests) - it only has to
 describe the five sources jobseek already knows about, with their existing
 behaviour unchanged. Adding a new portal is future work.
 """

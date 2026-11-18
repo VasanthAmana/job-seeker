@@ -2,7 +2,7 @@
 """Render the tailored Markdown resume (and why-me note) to LaTeX.
 
 Option (b) of the resume-format decision: adopt ai-job-search's moderncv CV
-template and cover.cls why-me-note template (MIT, see jobseek/NOTICE). This
+template and cover.cls why-me-note template (MIT, see NOTICE). This
 module is a renderer only - it reads the same grounded Markdown that
 `tailor.md` Step 2 already produces (and that `export_resume.py --format
 markdown` still exports via pandoc) and turns it into LaTeX. It invents

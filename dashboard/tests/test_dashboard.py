@@ -1,4 +1,4 @@
-"""Offline tests for jobseek/dashboard (fixtures only, no network, no browser)."""
+"""Offline tests for dashboard (fixtures only, no network, no browser)."""
 
 import json
 import re

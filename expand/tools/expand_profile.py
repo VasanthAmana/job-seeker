@@ -17,7 +17,7 @@ separate `expand-proposals.md`, rewritten from scratch on every run, and the
 owner moves what survives into the profile by hand. `expand.md` is where the
 interactive version of Steps 2b/4/5 lives, for a human-in-the-loop session.
 
-Safety properties, each pinned by `jobseek/expand/tests/`:
+Safety properties, each pinned by `expand/tests/`:
 
   * **No profile file is ever written.** The only writable path is a file
     named `expand-proposals.md`; any other name is refused before anything
@@ -32,7 +32,7 @@ Safety properties, each pinned by `jobseek/expand/tests/`:
     with its reason.
 
 Usage:
-  python3 jobseek/expand/tools/expand_profile.py [--sources github,scholar]
+  python3 expand/tools/expand_profile.py [--sources github,scholar]
       [--profile PATH] [--out PATH] [--url kind=URL ...] [--json]
 """
 
@@ -91,7 +91,7 @@ def resolve_out_path(out: Path | str | None = None) -> Path:
         return path / PROPOSALS_FILENAME
     if path.name != PROPOSALS_FILENAME:
         raise ExpandError(
-            f"refusing to write to {path.name!r}: jobseek/expand only ever writes a file named "
+            f"refusing to write to {path.name!r}: expand only ever writes a file named "
             f"{PROPOSALS_FILENAME!r}. It never edits candidate-profile.md or any other profile file.")
     return path
 
@@ -156,7 +156,7 @@ def build_map(facts, *, sources=None, cfg=None, reader=read_url,
     """Read every selected source and fold the results into one competency map.
 
     `linkedin_client_loader` overrides how `linkedin_source` finds the
-    jobseek LinkedIn client. Left as None it loads `jobseek/linkedin/client.py`
+    jobseek LinkedIn client. Left as None it loads `linkedin/client.py`
     from disk, which is the production path; the tests pass a stand-in so a
     run never depends on whether the LinkedIn app happens to be running on
     the machine the suite is on.

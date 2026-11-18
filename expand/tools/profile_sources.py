@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Read `jobseek/profile/candidate-profile.md` and list the public sources it names.
+"""Read `profile/candidate-profile.md` and list the public sources it names.
 
 This is Step 0 plus the "other URLs in profile" half of Step 1 from
-ai-job-search's `/expand`, and it is the only place `jobseek/expand` touches
+ai-job-search's `/expand`, and it is the only place `expand` touches
 the profile at all - **read-only, always.** The profile's own header says the
 owner fills it from the resume and nothing in it may be invented; this module
 honours that by never writing to it and never inventing a source that is not
 written there.
 
-That is also the privacy boundary. `jobseek/expand` scans a source only when
+That is also the privacy boundary. `expand` scans a source only when
 the owner's profile names a handle or URL for it: no guessing a GitHub
 username from a name, no searching for a person who did not publish a link.
 A source type with no handle in the profile is reported as skipped, with that
@@ -152,7 +152,7 @@ def _from_labelled_line(label: str, value: str) -> list[SourceRef]:
 
 
 def parse_profile(text: str, path: str = "") -> ProfileFacts:
-    """Everything `jobseek/expand` needs out of the profile, and nothing else."""
+    """Everything `expand` needs out of the profile, and nothing else."""
     text = FILL_RE.sub(" ", text)
     name_match = NAME_RE.search(text)
     name = name_match.group(1).strip() if name_match else ""

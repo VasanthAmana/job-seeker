@@ -2,7 +2,7 @@
 
 The scanning itself is covered by test_expand_run.py; what matters here is
 that the tool is visible to an MCP client with a well-formed schema, hands
-its arguments to `jobseek/expand` unchanged, and turns an ExpandError into a
+its arguments to `expand` unchanged, and turns an ExpandError into a
 tool-level error rather than a transport failure.
 """
 
@@ -16,8 +16,8 @@ MCP_DIR = Path(__file__).resolve().parent.parent.parent / "mcp"
 if str(MCP_DIR) not in sys.path:
     sys.path.insert(0, str(MCP_DIR))
 
-import server  # noqa: E402  - jobseek/mcp/server.py
-import tools as mcp_tools  # noqa: E402  - jobseek/mcp/tools.py
+import server  # noqa: E402  - mcp/server.py
+import tools as mcp_tools  # noqa: E402  - mcp/tools.py
 
 
 def test_expand_profile_is_registered():

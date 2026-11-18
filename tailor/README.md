@@ -1,4 +1,4 @@
-# jobseek/tailor - grounded resume tailoring
+# tailor - grounded resume tailoring
 
 `tailor [job]` rewrites the owner's master resume for one job description:
 reordered/reworded bullets aimed at the JD's keywords, a rewritten summary,
@@ -6,24 +6,24 @@ a hard 2-page budget - with the **never-invent rule enforced by audit**, an
 ATS keyword check, and a 3-line "why me" outreach note. Nothing is sent or
 submitted; the output is drafts on disk.
 
-Adapted (MIT, see `jobseek/NOTICE`) from ai-job-search's `/apply`
+Adapted (MIT, see `NOTICE`) from ai-job-search's `/apply`
 drafter-reviewer workflow and `application-reviewer` agent.
 
 ## Claude Code entry point
 
-The command lives at `jobseek/tailor/tailor.md`. Make it (and the reviewer
-subagent) available to Claude Code sessions at the workie root:
+The command lives at `tailor/tailor.md`. Make it (and the reviewer
+subagent) available to Claude Code sessions at the repository root:
 
 ```bash
 mkdir -p .claude/commands .claude/agents
-ln -sf ../../jobseek/tailor/tailor.md .claude/commands/tailor.md
-ln -sf ../../jobseek/tailor/agents/resume-reviewer.md .claude/agents/resume-reviewer.md
+ln -sf ../../tailor/tailor.md .claude/commands/tailor.md
+ln -sf ../../tailor/agents/resume-reviewer.md .claude/agents/resume-reviewer.md
 ```
 
-Then, in a Claude Code session at the workie root:
+Then, in a Claude Code session at the repository root:
 
 ```
-/tailor jobseek/state/postings/acme_ai_strategy_director.txt
+/tailor state/postings/acme_ai_strategy_director.txt
 ```
 
 or paste the JD text directly after `/tailor`. The JD argument is a file or
@@ -34,14 +34,14 @@ a raw URL the command fetches it, preferring the employer's own ATS page.
 
 | Input | Path | Fallback when absent |
 |---|---|---|
-| Master resume (source of truth) | `jobseek/resume/master.*` (`.md`, `.docx`, or `.pdf` - whichever exists) | the command asks for the file; never drafts from memory |
-| Candidate profile (facts) | `jobseek/profile/candidate-profile.md` (built by the profile worker) | master resume is the sole grounding source; the command says so once |
-| Writing style | `jobseek/profile/writing-style.md` | built-in defaults: warm but direct, first person, no cliches, no em-dashes |
+| Master resume (source of truth) | `resume/master.*` (`.md`, `.docx`, or `.pdf` - whichever exists) | the command asks for the file; never drafts from memory |
+| Candidate profile (facts) | `profile/candidate-profile.md` (built by the profile worker) | master resume is the sole grounding source; the command says so once |
+| Writing style | `profile/writing-style.md` | built-in defaults: warm but direct, first person, no cliches, no em-dashes |
 | Job description | file path or pasted text | - |
 
 ## Outputs
 
-Written to `jobseek/applications/<company>_<role>/` (personal, gitignored):
+Written to `applications/<company>_<role>/` (personal, gitignored):
 
 - `resume_<company>_<role>.md` - the tailored resume (Markdown master)
 - `resume_<company>_<role>.tex` / `.pdf` - LaTeX export (default; see below),
@@ -87,7 +87,7 @@ missing (gap) - leave it. Keywords are never stuffed.
 
 The owner decided (2026-11): **LaTeX is the default** (`--format latex`,
 also the default when `--format` is omitted) - ai-job-search's moderncv
-templates (MIT, see `jobseek/NOTICE`), with the
+templates (MIT, see `NOTICE`), with the
 `verify_pdf.py`/`verify_layout.py` compile-and-inspect loop. `--format
 markdown` keeps the original pandoc/.docx route available as a fallback,
 not removed.
@@ -142,7 +142,7 @@ needs `pandoc` (and a PDF engine for PDF).
 ## Tests
 
 ```bash
-cd jobseek/tailor && python3 -m pytest tests/ -q
+cd tailor && python3 -m pytest tests/ -q
 ```
 
 Fixtures are a fictional persona (`tests/fixtures/`) - no personal data is
@@ -155,8 +155,8 @@ committed. The export test skips when pandoc is absent.
   restates the boundary.
 - The reviewer subagent is read-only (Read/Glob/Grep; no Edit/Write).
 - Personal data (master resume, tailored outputs, application archive) stays
-  out of git: `jobseek/applications/` and `jobseek/resume/` are gitignored
-  (see `jobseek/.gitignore`, owned by the profile worker; `tailor/.gitignore`
+  out of git: `applications/` and `resume/` are gitignored
+  (see `.gitignore`, owned by the profile worker; `tailor/.gitignore`
   covers this folder's own scratch).
 - Sending, applying and recruiter messaging are out of scope - the why-me
   note is a draft the owner sends himself.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The one read-only path by which `jobseek/expand` pulls a public page.
+"""The one read-only path by which `expand` pulls a public page.
 
 A GitHub README, a Scholar profile, a conference programme and a press
 article are untrusted third-party text in exactly the way a job posting is,

@@ -1,7 +1,7 @@
 """The fetch/guard path: robots refusals, transport errors, and the integrity gate.
 
 The injection cases here deliberately run the real `posting_guard.py` over a
-fixture built the same way `jobseek/tests/fixtures/postings/injection_posting.html`
+fixture built the same way `tests/fixtures/postings/injection_posting.html`
 is - hidden `display:none` block, zero-size span, an exfiltration URL - so
 what is under test is the shipped scanner, not a local re-implementation of it.
 """

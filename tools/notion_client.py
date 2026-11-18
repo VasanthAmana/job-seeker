@@ -3,7 +3,7 @@
 
 Same shape as Gmail's account-folder pattern (`tools/gmail_alerts.py`): the
 Notion MCP's own sign-in writes `<account_dir>/token.json` outside this repo
-(gitignored by location, not by name - see jobseek/NOTION_SETUP.md); this
+(gitignored by location, not by name - see NOTION_SETUP.md); this
 module only ever reads that file. There is no Notion API token stored in
 jobseek, and this module makes no write call unless a valid token is found.
 

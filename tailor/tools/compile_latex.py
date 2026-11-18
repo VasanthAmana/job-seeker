@@ -7,7 +7,7 @@ module is the only piece of the LaTeX route that shells out.
 
 Exit codes: 0 = compiled; 1 = compile failed (log excerpt on stderr);
 2 = skipped (no LaTeX engine on PATH - install a TeX distribution, see
-jobseek/tailor/LATEX_SETUP.md).
+tailor/LATEX_SETUP.md).
 """
 
 from __future__ import annotations
@@ -73,7 +73,7 @@ def main(argv: list[str] | None = None) -> int:
     rc, output = compile_tex(tex, args.engine, args.passes)
     if rc == 2:
         print(f"skipped: {output}; install a TeX distribution - see "
-              f"jobseek/tailor/LATEX_SETUP.md, or use --format markdown",
+              f"tailor/LATEX_SETUP.md, or use --format markdown",
               file=sys.stderr)
         return 2
     if rc == 1:

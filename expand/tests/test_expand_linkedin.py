@@ -1,6 +1,6 @@
 """LinkedIn: the jobseek tool path when it is there, the web path when it is not.
 
-`jobseek/linkedin/client.py` ships on a different branch, so both paths are
+`linkedin/client.py` ships on a different branch, so both paths are
 exercised with stand-ins here: a fake client module for path 1, and the
 fixture fetcher for path 2. No test imports the real client or runs the app.
 """

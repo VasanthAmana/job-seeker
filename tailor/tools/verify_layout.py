@@ -2,7 +2,7 @@
 """Verify a LaTeX compile log for layout overflow or holes.
 
 Reimplemented from ai-job-search's verify_layout.py (MIT, see
-jobseek/NOTICE). Engines (pdflatex/xelatex/lualatex/tectonic) warn in their
+NOTICE). Engines (pdflatex/xelatex/lualatex/tectonic) warn in their
 log when a line or box doesn't fit the page:
 
   - `Overfull \\hbox` / `Overfull \\vbox` - content spills past the margin or

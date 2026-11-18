@@ -2,7 +2,7 @@
 """Seen-jobs store for `run-alerts`: dedupe alert links, keep history out of
 the agent context.
 
-Adapted from ai-job-search's tools/scrape_state.py (MIT, see jobseek/NOTICE).
+Adapted from ai-job-search's tools/scrape_state.py (MIT, see NOTICE).
 The upstream tool dedupes portal-CLI search hits; this one dedupes posting
 links extracted from Gmail alert emails. The differences that matter:
 
@@ -15,8 +15,8 @@ links extracted from Gmail alert emails. The differences that matter:
     key that already belongs to another posting.
 
 Usage:
-  python3 jobseek/tools/alert_state.py candidates --results links.json
-  python3 jobseek/tools/alert_state.py store --results enriched.json
+  python3 tools/alert_state.py candidates --results links.json
+  python3 tools/alert_state.py store --results enriched.json
 
 Both read a JSON array. candidates prints {"selected": [...], counts...};
 store prints {"added": [keys...], counts...} and persists. Exit 0 on success,
@@ -40,7 +40,7 @@ if str(JOBSEEK_ROOT) not in sys.path:
 from sources.registry import SOURCE_IDS  # noqa: E402
 
 # Fields `store` requires. `source` is the alert channel - see the source
-# registry (jobseek/sources/registry.py) for the registered set.
+# registry (sources/registry.py) for the registered set.
 REQUIRED_STORE_FIELDS = ("title", "company", "url", "source", "first_seen", "status")
 STORE_STATUSES = ("new", "skipped", "expired")
 SOURCES = SOURCE_IDS

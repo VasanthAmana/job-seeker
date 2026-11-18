@@ -16,7 +16,7 @@ Pipeline". Once connected, that flow writes a token to:
 ~/.notion-mcp/default/token.json      # {"access_token": "..."}
 ```
 
-(or wherever `jobseek/config.json`'s `notion.account_dir` points - see
+(or wherever `config.json`'s `notion.account_dir` points - see
 `config.example.json`.) This path is **outside** the jobseek repo folder and
 is never read into git; `notion_sync` only ever reads it, never writes it.
 
@@ -27,7 +27,7 @@ expected state before you've connected Notion, not an error.
 ## 2. Point jobseek at a parent page (first sync only)
 
 The database is created once, under a page you choose. In
-`jobseek/config.json` (copy from `config.example.json` if you haven't):
+`config.json` (copy from `config.example.json` if you haven't):
 
 ```json
 "notion": {
@@ -51,10 +51,10 @@ setup gap rather than "Notion isn't connected").
 ## 3. Run it
 
 ```bash
-python3 jobseek/tools/notion_sync.py sync              # current shortlist
-python3 jobseek/tools/notion_sync.py sync --all         # every stored posting
-python3 jobseek/tools/notion_sync.py sync --min-score 70
-python3 jobseek/tools/notion_sync.py sync --rebuild     # recreate every synced page
+python3 tools/notion_sync.py sync              # current shortlist
+python3 tools/notion_sync.py sync --all         # every stored posting
+python3 tools/notion_sync.py sync --min-score 70
+python3 tools/notion_sync.py sync --rebuild     # recreate every synced page
 ```
 
 or, in a Claude Code session: **notion sync**, **notion sync --all**, etc.
@@ -65,7 +65,7 @@ or, in a Claude Code session: **notion sync**, **notion sync --all**, etc.
 One Notion page per posting, with Title, Company, Status, Score, URL,
 Deadline, Reason and the posting's jobseek key (`JobKey`, for cross-
 reference). Each posting's Notion page id is written back to
-`jobseek/state/seen_jobs.json` (gitignored) as `notion_page_id` - so a
+`state/seen_jobs.json` (gitignored) as `notion_page_id` - so a
 resync **updates** that same page rather than creating a duplicate.
 `--rebuild` creates a fresh page and archives the previous one instead.
 
@@ -76,5 +76,5 @@ resync **updates** that same page rather than creating a duplicate.
 - Read-only with respect to jobseek's own data: the only field `notion_sync`
   writes to `state/seen_jobs.json` is `notion_page_id`.
 - No Notion API token is ever committed; `state/`, `config.json` and the
-  account folder are all outside git's reach (see `jobseek/.gitignore`, and
+  account folder are all outside git's reach (see `.gitignore`, and
   the account folder lives outside the repo entirely).

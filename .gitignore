@@ -1,5 +1,5 @@
-# Personal data and derived state - never committed, even though workie is
-# private. An accidental push or a pasted diff must not leak the resume,
+# Personal data and derived state - never committed: this repository is
+# public. An accidental push or a pasted diff must not leak the resume,
 # the application history, Gmail message IDs, or fetched postings.
 
 # Application tracking and per-application archives
@@ -21,11 +21,17 @@ upskill/report-*.md
 # Salary data (BYO exports; personal)
 salary_data.json
 
-# jobseek/expand's proposed profile additions: generated from the owner's
+# expand's proposed profile additions: generated from the owner's
 # public GitHub/Scholar/LinkedIn/press presence, so personal by definition
-# and overwritten on every run. The profile files it proposes against ARE
-# committed; this proposal list is not.
+# and overwritten on every run.
 profile/expand-proposals.md
+
+# The owner's filled-in profile files: real resume facts, search rubric and
+# voice. Only the profile/*.example.md templates are committed; copy each to
+# its real name and fill it locally.
+profile/candidate-profile.md
+profile/job-evaluation.md
+profile/writing-style.md
 
 # Real jobseek config: Gmail account folder paths, output locations, etc.
 # Commit only config.example.json (placeholder values).

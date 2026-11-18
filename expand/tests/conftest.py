@@ -1,4 +1,4 @@
-"""Offline test rig for jobseek/expand.
+"""Offline test rig for expand.
 
 No test here touches the network. Every read goes through the real
 `read_source.read_url()` - and therefore the real `page_decode` and

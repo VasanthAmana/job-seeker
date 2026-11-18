@@ -4,5 +4,5 @@ __pycache__/
 .pytest_cache/
 
 # Scratch output from ad-hoc runs of the tools (default outputs go to the
-# gitignored jobseek/applications/ archive instead)
+# gitignored applications/ archive instead)
 out/

@@ -1,6 +1,6 @@
 """jobseek config loading: defaults, overrides, precedence, bad input.
 
-No network, no real jobseek/config.json is read - every test points
+No network, no real config.json is read - every test points
 `load_config()` at a fixture path or a missing one.
 """
 
