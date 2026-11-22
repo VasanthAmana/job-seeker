@@ -76,7 +76,7 @@ seniority mismatches and technical/engineering roles. A posting found by
 email, by LinkedIn or by ChristianTechJobs is one pipeline: same dedupe
 store, same gates, same ranking.
 
-Variations: `run alerts --days 14`, `run alerts --rank-only` (skip Gmail,
+Variations: `run alerts --days 14`, `run alerts --rank-only` (skip ingest,
 re-rank stored postings), `run alerts --limit 20 --top 5`.
 
 `tailor [job]` is a separate step built in `tailor/`, and `expand`

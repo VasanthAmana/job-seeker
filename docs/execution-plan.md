@@ -119,6 +119,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 | `expand/tools/read_source.py`, `profile_sources.py`, `linkedin_source.py`, `competency_map.py` | their `expand/tests` suites (27 plus the relevant `test_expand_run` cases) | 6 | profile sources and intake | 8 |
 | `tailor/tools/grounding_audit.py` | `test_grounding_audit` (13) | 7 | `core/grounding`, shared by profile edits and resumes | 10 |
 | `tools/gmail_alerts.py`, `sources/registry.py`, `alert-sources.json` | `test_gmail_alerts` (10), `test_source_registry` (8) | 8 | `gmail` and the four alert connectors | 8 |
+| `tools/christiantechjobs_alerts.py` | `test_christiantechjobs_alerts` (12) | 8 | the `christiantechjobs` connector (`jobs.alerts@1`), public RSS, no mailbox, no auth | 8 |
 | `tools/fetch_page.py`, `robots_check.py` | fetch and robots cases in `test_tools_integrity` | 8 | `web-posting` | 8 |
 | `tools/notion_client.py`, `notion_sync.py` | `test_notion_client` (7), `test_notion_sync` (15) | 8 | the `notion` connector | 8 |
 | `expand/tools/github_source.py`, `scholar_source.py`, `web_source.py`, `expand_profile.py` | the rest of `expand/tests` | 8 | `github-public` and `profile_expand_scan` | 8 |

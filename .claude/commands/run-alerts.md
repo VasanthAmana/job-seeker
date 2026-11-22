@@ -25,7 +25,7 @@ Follow these steps **in order**.
   `days`, else 7), then rank up to the configured candidate limit (`ranking.candidate_limit`,
   else 10) unranked postings, shortlist the configured top-N (`ranking.top_n`, else 5)
 - `--days <N>` -> look-back window for the Gmail query, overrides config
-- `--rank-only` -> skip Gmail and fetching; rank stored `new`/`unreachable` postings
+- `--rank-only` -> skip Gmail, LinkedIn and ChristianTechJobs ingest, and fetching; rank stored `new`/`unreachable` postings
 - `--focus <text>` -> rank only postings whose title/company/fit-notes match
 - `--limit <N>` -> max postings to score this run, overrides config
 - `--top <N>` -> shortlist size, overrides config
@@ -59,7 +59,8 @@ experience levels, remote - see `config.example.json`) through the signed-in
 "links", "errors"}`. A LinkedIn search that cannot reach the app (not
 running, not signed in, pace-capped) lands in `errors` with a "LinkedIn
 needs you"-style message and is not fatal - report it alongside the
-shortlist and continue with Gmail's links alone. If the app was never
+shortlist and continue with whatever Gmail and ChristianTechJobs already
+found. If the app was never
 configured (`linkedin.saved_searches` empty), `searches` is `0`: say nothing
 and move on.
 
@@ -94,22 +95,23 @@ contains both.
 
 ## Step 2: Dedupe against the seen-jobs store (skip with --rank-only)
 
-Combine both sources' candidate links into one JSON array and write it to a
-scratch file **outside the repo** (system temp dir) - one object per link:
-`{"url", "source", "anchor_title" (the link's anchor text, may be ""),
+Combine all three sources' candidate links into one JSON array and write it
+to a scratch file **outside the repo** (system temp dir) - one object per
+link: `{"url", "source", "anchor_title" (the link's anchor text, may be ""),
 "message_id", "alert_date"}`, plus `title`/`company`/`location` when already
-known (LinkedIn's search results supply these pre-fetch; Gmail's usually
-do not). Then:
+known (LinkedIn's search results and ChristianTechJobs' feed entries supply
+these pre-fetch; Gmail's usually do not). Then:
 
 ```bash
 python3 tools/alert_state.py candidates --results <scratch file>
 ```
 
 It dedupes by URL and company+title against `state/seen_jobs.json`,
-`tracker.csv`, and within the batch (so a job surfaced by both an
-email alert and a LinkedIn saved search collapses to one candidate), and
-prints `selected` plus counts. The `selected` list is the fetch list - one
-pipeline whether a posting came from email or LinkedIn.
+`tracker.csv`, and within the batch (so a job surfaced by more than one of
+an email alert, a LinkedIn saved search and ChristianTechJobs collapses to
+one candidate), and prints `selected` plus counts. The `selected` list is
+the fetch list - one pipeline whether a posting came from email, LinkedIn
+or ChristianTechJobs.
 
 ---
 
