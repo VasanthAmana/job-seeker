@@ -66,13 +66,15 @@ Open Claude Code at the repository root and say:
 > **run alerts**
 
 That runs `.claude/commands/run-alerts.md`: read the last 7 days of job-alert
-email from Gmail (read-only) *and* run your configured LinkedIn saved
-searches (read-only, via `linkedin/`), extract posting links, dedupe
-both sources against everything already seen, fetch and integrity-gate each
-new posting, score it against the rubric, and print the top-5 shortlist as a
-Markdown table plus JSON - with explicit flags for seniority mismatches and
-technical/engineering roles. A posting found by email and a posting found by
-LinkedIn are one pipeline: same dedupe store, same gates, same ranking.
+email from Gmail (read-only), run your configured LinkedIn saved searches
+(read-only, via `linkedin/`), and poll ChristianTechJobs' public RSS feed
+(read-only, via `tools/christiantechjobs_alerts.py`), extract posting links,
+dedupe all three sources against everything already seen, fetch and
+integrity-gate each new posting, score it against the rubric, and print the
+top-5 shortlist as a Markdown table plus JSON - with explicit flags for
+seniority mismatches and technical/engineering roles. A posting found by
+email, by LinkedIn or by ChristianTechJobs is one pipeline: same dedupe
+store, same gates, same ranking.
 
 Variations: `run alerts --days 14`, `run alerts --rank-only` (skip Gmail,
 re-rank stored postings), `run alerts --limit 20 --top 5`.
