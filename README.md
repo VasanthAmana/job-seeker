@@ -108,6 +108,8 @@ job-seeker/
 │   │   ├── src/, bin/, tests/, README.md   # unchanged from ai-job-search - see NOTICE
 │   ├── client.py           # Python client for the app's local socket/named-pipe endpoint
 │   └── source.py           # run-alerts LinkedIn source: saved searches -> candidate links
+├── sources/
+│   └── registry.py         # the one place a run-alerts source id is registered
 ├── mcp/
 │   ├── server.py           # stdio MCP server (see "MCP server" below)
 │   └── tools.py            # the tool implementations (read-only, except dashboard and expand_profile, which each write only their own output file)
@@ -118,6 +120,7 @@ job-seeker/
 │   └── writing-style.example.md        # tone rules + the 3-line "why me" note [owner fills voice]
 ├── tools/
 │   ├── gmail_alerts.py     # read-only Gmail alert listing + link extraction
+│   ├── christiantechjobs_alerts.py  # run-alerts source: public RSS poll, no sign-up
 │   ├── alert_state.py      # dedupe alert links into the seen-jobs store
 │   ├── rank_state.py       # ranking state machine (select/apply/sweep)
 │   ├── job_key.py          # canonical dedupe keys
@@ -211,6 +214,9 @@ steps, package lists and troubleshooting: `tailor/LATEX_SETUP.md`.
    `/run-alerts` to include LinkedIn; if it isn't running, LinkedIn-backed
    tools and the `/run-alerts` LinkedIn step report a clear "LinkedIn needs
    you: ..." message and the run continues with Gmail's results alone.
+7. ChristianTechJobs needs no setup: `/run-alerts` polls its public RSS feed
+   (`tools/christiantechjobs_alerts.py`) automatically, no sign-up or
+   account.
 
 ### Configuration
 

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+    <title>Christian Tech Jobs</title>
+    <link>https://www.christiantechjobs.io</link>
+    <atom:link href="https://www.christiantechjobs.io/api/rss" rel="self" type="application/rss+xml" />
+    <description>Christian Tech Jobs is the Christian job board for tech, design, marketing, communications, and sales roles at Christian companies, churches, and nonprofits.</description>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 20 Nov 2026 16:20:00 GMT</lastBuildDate>
+
+        <item>
+            <title>Oracle Cloud Applications Developer-Fusion</title>
+            <description><![CDATA[<img class='webfeedsFeaturedVisual' src='https://www.christiantechjobs.io/api/opengraph-image?slug=remote-oracle-cloud-applications-developer-fusion-lifeway-1901&v=v5' width='480px' />
+              <p>Lifeway — Remote</p>
+              <p>Tags: Software Development • Remote</p>
+              <strong>Overview</strong>Lifeway is seeking an Oracle Cloud Applications Developer to connect finance and supply chain systems and extend Fusion Cloud ERP where standard features stop. Remote-eligible, occasional travel for training.<br /><br />Questions? Contact Careers Team at jobs@example.org or (555) 010-1234.]]></description>
+            <link>https://www.christiantechjobs.io/christian-jobs/remote-oracle-cloud-applications-developer-fusion-lifeway-1901</link>
+            <guid isPermaLink="false">https://www.christiantechjobs.io/christian-jobs/remote-oracle-cloud-applications-developer-fusion-lifeway-1901</guid>
+            <pubDate>Fri, 20 Nov 2026 16:13:34 GMT</pubDate>
+            <category>Software Development</category>
+        </item>
+
+        <item>
+            <title>Communications Designer</title>
+            <description><![CDATA[<img class='webfeedsFeaturedVisual' src='https://www.christiantechjobs.io/api/opengraph-image?slug=communications-designer-eastview-church-2201&v=v5' width='480px' />
+              <p>Eastview Church — Normal, IL</p>
+              <p>Tags: Design</p>
+              <strong>Overview</strong>Eastview Church seeks a Communications Designer to produce print and digital assets for weekly services and seasonal campaigns. On-site, Normal, IL. Reach out to our fictional recruiting contact, Jordan Example, at jordan.example@example.org.]]></description>
+            <link>https://www.christiantechjobs.io/christian-jobs/communications-designer-eastview-church-2201</link>
+            <guid isPermaLink="false">https://www.christiantechjobs.io/christian-jobs/communications-designer-eastview-church-2201</guid>
+            <pubDate>Thu, 19 Nov 2026 09:05:00 GMT</pubDate>
+            <category>Design</category>
+        </item>
+
+        <item>
+            <title>PPC &amp; SEO Specialist</title>
+            <description><![CDATA[<img class='webfeedsFeaturedVisual' src='https://www.christiantechjobs.io/api/opengraph-image?slug=ppc-seo-specialist-grove9-3301&v=v5' width='480px' />
+              <p>Grove9 — Remote</p>
+              <p>Tags: Marketing • Remote</p>
+              <strong>Overview</strong>Grove9 is hiring a PPC &amp; SEO Specialist to run paid search and organic growth for Christian nonprofit clients. Fully remote, US timezones.]]></description>
+            <link>https://www.christiantechjobs.io/christian-jobs/ppc-seo-specialist-grove9-3301</link>
+            <guid isPermaLink="false">https://www.christiantechjobs.io/christian-jobs/ppc-seo-specialist-grove9-3301</guid>
+            <pubDate>Wed, 18 Nov 2026 12:00:00 GMT</pubDate>
+            <category>Marketing</category>
+        </item>
+
+        <item>
+            <title>Volunteer Coordinator (unusual listing format)</title>
+            <description><![CDATA[<strong>Overview</strong>This listing omits the usual "Company — Location" lead paragraph the other items carry, so the connector should fall back to an empty company/location rather than guessing.]]></description>
+            <link>https://www.christiantechjobs.io/christian-jobs/volunteer-coordinator-unusual-4401</link>
+            <guid isPermaLink="false">https://www.christiantechjobs.io/christian-jobs/volunteer-coordinator-unusual-4401</guid>
+            <pubDate>Tue, 17 Nov 2026 08:30:00 GMT</pubDate>
+            <category>Other</category>
+        </item>
+
+</channel>
+</rss>

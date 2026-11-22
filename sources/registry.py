@@ -72,6 +72,10 @@ _SOURCES = (
         ),
     ),
     Source(
+        id="christiantechjobs",
+        name="ChristianTechJobs RSS feed (public, no sign-up)",
+    ),
+    Source(
         id="other",
         name="Unclassified posting link",
     ),
