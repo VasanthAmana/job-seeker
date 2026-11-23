@@ -9,7 +9,7 @@ Now all three read `SOURCE_IDS` / `REGISTRY` from here.
 This is deliberately a small subset of the full per-portal manifest the
 report's section 3.2 designs for onboarding *new* portals (each with its own
 `sources/<id>/` directory, fixtures and tests) - it only has to
-describe the five sources jobseek already knows about, with their existing
+describe the six sources jobseek already knows about, with their existing
 behaviour unchanged. Adding a new portal is future work.
 """
 
@@ -70,6 +70,10 @@ _SOURCES = (
             "eightfold.ai",
             "phenompeople.com",
         ),
+    ),
+    Source(
+        id="christiantechjobs",
+        name="ChristianTechJobs RSS feed (public, no sign-up)",
     ),
     Source(
         id="other",

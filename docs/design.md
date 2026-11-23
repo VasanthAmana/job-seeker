@@ -559,6 +559,7 @@ Paths are relative to the repository root. **Port** means rewrite in TypeScript 
 | `tools/config.py`, `config.example.json` | Reshape | Settings and connector bindings. `state_lock` gives way to transactions and run leases |
 | `sources/registry.py`, `alert-sources.json` | Reshape | `connectors/registry.json`. Senders and host patterns move into each alert connector's manifest |
 | `tools/gmail_alerts.py` | Reshape | The `gmail` connector (`mailbox@1`) and the four existing alert connectors |
+| `tools/christiantechjobs_alerts.py` | Reshape | The `christiantechjobs` connector (`jobs.alerts@1`): a public RSS feed, no mailbox, no auth. Ported in Phase 8, "the other connectors" |
 | `tools/fetch_page.py`, `robots_check.py`, `page_decode.py` | Port | The `web-posting` connector |
 | `tools/posting_guard.py` and its copy in `tailor/tools/` | Port one | `core/guard`. The copy is removed |
 | `tools/notion_client.py`, `notion_sync.py`, `NOTION_SETUP.md` | Port | The `notion` connector (`tracker.export@1`) and the `notion_sync` tool. The setup guide is updated for the new commands |

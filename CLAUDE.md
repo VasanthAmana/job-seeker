@@ -34,9 +34,9 @@ workflow.
 
 ## Workflow pointers
 
-- "run alerts" -> `../../.claude/commands/run-alerts.md` (ingest Gmail alerts
-  and LinkedIn saved searches, dedupe, fetch + integrity-gate, rank, top-5
-  shortlist).
+- "run alerts" -> `../../.claude/commands/run-alerts.md` (ingest Gmail alerts,
+  LinkedIn saved searches and the ChristianTechJobs RSS poll, dedupe, fetch +
+  integrity-gate, rank, top-5 shortlist).
 - State moves through `tools/alert_state.py` and `tools/rank_state.py`, never
   through the conversation: `state/seen_jobs.json` is append-only and grows
   for the life of the search.

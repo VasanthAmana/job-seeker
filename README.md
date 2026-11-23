@@ -66,15 +66,17 @@ Open Claude Code at the repository root and say:
 > **run alerts**
 
 That runs `.claude/commands/run-alerts.md`: read the last 7 days of job-alert
-email from Gmail (read-only) *and* run your configured LinkedIn saved
-searches (read-only, via `linkedin/`), extract posting links, dedupe
-both sources against everything already seen, fetch and integrity-gate each
-new posting, score it against the rubric, and print the top-5 shortlist as a
-Markdown table plus JSON - with explicit flags for seniority mismatches and
-technical/engineering roles. A posting found by email and a posting found by
-LinkedIn are one pipeline: same dedupe store, same gates, same ranking.
+email from Gmail (read-only), run your configured LinkedIn saved searches
+(read-only, via `linkedin/`), and poll ChristianTechJobs' public RSS feed
+(read-only, via `tools/christiantechjobs_alerts.py`), extract posting links,
+dedupe all three sources against everything already seen, fetch and
+integrity-gate each new posting, score it against the rubric, and print the
+top-5 shortlist as a Markdown table plus JSON - with explicit flags for
+seniority mismatches and technical/engineering roles. A posting found by
+email, by LinkedIn or by ChristianTechJobs is one pipeline: same dedupe
+store, same gates, same ranking.
 
-Variations: `run alerts --days 14`, `run alerts --rank-only` (skip Gmail,
+Variations: `run alerts --days 14`, `run alerts --rank-only` (skip ingest,
 re-rank stored postings), `run alerts --limit 20 --top 5`.
 
 `tailor [job]` is a separate step built in `tailor/`, and `expand`
@@ -108,6 +110,8 @@ job-seeker/
 │   │   ├── src/, bin/, tests/, README.md   # unchanged from ai-job-search - see NOTICE
 │   ├── client.py           # Python client for the app's local socket/named-pipe endpoint
 │   └── source.py           # run-alerts LinkedIn source: saved searches -> candidate links
+├── sources/
+│   └── registry.py         # the one place a run-alerts source id is registered
 ├── mcp/
 │   ├── server.py           # stdio MCP server (see "MCP server" below)
 │   └── tools.py            # the tool implementations (read-only, except dashboard and expand_profile, which each write only their own output file)
@@ -118,6 +122,7 @@ job-seeker/
 │   └── writing-style.example.md        # tone rules + the 3-line "why me" note [owner fills voice]
 ├── tools/
 │   ├── gmail_alerts.py     # read-only Gmail alert listing + link extraction
+│   ├── christiantechjobs_alerts.py  # run-alerts source: public RSS poll, no sign-up
 │   ├── alert_state.py      # dedupe alert links into the seen-jobs store
 │   ├── rank_state.py       # ranking state machine (select/apply/sweep)
 │   ├── job_key.py          # canonical dedupe keys
@@ -211,6 +216,9 @@ steps, package lists and troubleshooting: `tailor/LATEX_SETUP.md`.
    `/run-alerts` to include LinkedIn; if it isn't running, LinkedIn-backed
    tools and the `/run-alerts` LinkedIn step report a clear "LinkedIn needs
    you: ..." message and the run continues with Gmail's results alone.
+7. ChristianTechJobs needs no setup: `/run-alerts` polls its public RSS feed
+   (`tools/christiantechjobs_alerts.py`) automatically, no sign-up or
+   account.
 
 ### Configuration
 

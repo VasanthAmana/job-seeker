@@ -11,8 +11,8 @@ import gmail_alerts
 from sources import registry
 
 
-def test_registry_has_the_five_existing_sources_unchanged():
-    assert registry.SOURCE_IDS == ("linkedin", "indeed", "ladders", "employer", "other")
+def test_registry_has_the_existing_sources_unchanged():
+    assert registry.SOURCE_IDS == ("linkedin", "indeed", "ladders", "employer", "christiantechjobs", "other")
 
 
 def test_alert_state_sources_is_the_registry_not_its_own_copy():
