@@ -46,7 +46,8 @@ When no assistant is connected, a few named, switchable steps (profile intake, m
 ## Status
 
 Early design. The code of its predecessor, jobseek, now lives in this repository with its history and works as it did before; the section below covers it.
-The design document and the execution plan are in `docs/`; the new engine comes next.
+The design document and the execution plan are in `docs/`.
+The new TypeScript engine is at phase 0: `src/` holds a stub `job-seeker mcp` stdio server with one tool, `status`, and `test/mcp/` the MCP acceptance harness (`npm ci && npm test`, Node.js 22 or later).
 
 ## Current code (migrated from jobseek)
 

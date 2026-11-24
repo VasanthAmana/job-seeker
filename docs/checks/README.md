@@ -14,4 +14,4 @@ Rules for these files:
   data - this repository is public.
 - Client differences discovered while running a check (for example,
   elicitation support) are written up in
-  [../decisions/mcp-clients.md](../decisions/mcp-clients.md).
+  `docs/decisions/mcp-clients.md` (created by the first such finding).
