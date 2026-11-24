@@ -66,12 +66,18 @@ export class Engine {
     this.clock = options.clock ?? clockFromEnv(this.env);
   }
 
-  /** Open (and migrate) the data directory, or explain why it cannot be. */
+  /** Open (and migrate) the data directory, or explain why it cannot be. Reloads config.json when it changes. */
   context(): CoreContext {
-    if (this.ctx) return this.ctx;
     let db: Database | null = null;
     try {
       const settings = loadSettings(this.dataDir);
+      if (this.ctx) {
+        if (JSON.stringify(settings) !== JSON.stringify(this.ctx.settings)) {
+          this.ctx.settings = settings;
+          rescoreIfRulesChanged(this.ctx);
+        }
+        return this.ctx;
+      }
       db = openDatabase({ dataDir: this.dataDir, clock: this.clock }).db;
       const ctx: CoreContext = { db, clock: this.clock, settings, dataDir: this.dataDir };
       rescoreIfRulesChanged(ctx);
