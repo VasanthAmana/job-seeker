@@ -10,7 +10,7 @@ You already have an AI assistant, so job-seeker does not rebuild what it does we
 Instead it supplies what an assistant lacks:
 
 - **Saved state:** your profile, search criteria, jobs seen and applications.
-- **Connectors:** official APIs first, a browser where there is no API, and logged-in sessions that persist.
+- **Connectors:** official APIs first; where there is no API, a Handyman compartment with your real sign-in does the browser work.
 - **Unattended runs:** scheduled searches and reports that work with no assistant connected.
 - **Research data:** structured, evidence-backed information about what the market wants for your profile.
 - **Resumes:** high-quality output from LaTeX templates.
@@ -23,7 +23,7 @@ When no assistant is connected, a few named, switchable steps (profile intake, m
 - **Profile:** builds your profile from a resume, a written description or your LinkedIn profile, and traces every skill to its source.
 - **Search:** searches with saved criteria across connectors, removes duplicates and ranks the results against your profile.
 - **Connectors:** LinkedIn, Naukri, iimjobs, ExecThread, Adzuna, Built In and more.
-- **Browser sessions:** one saved profile per site that runs headless. It opens a window only when a captcha or login needs you, then carries on headless.
+- **Browser sites:** every site that needs a browser (LinkedIn today; Naukri, iimjobs or others when needed) runs as a compartment of Handyman, the separate desktop app that holds your sign-ins, paces each site and stops at the first warning. job-seeker talks to it over a local endpoint; when Handyman is not running, browser sources are skipped with a clear note and API sources still run.
 - **Research:** suggests the skills, roles and markets in demand for your profile.
 - **Criteria changes:** proposes new search criteria from that research, and applies them only after you approve.
 - **LinkedIn profile:** searches jobs that fit your LinkedIn profile, and updates that profile from your assistant, showing each change as a diff and applying it only after you approve.
@@ -35,12 +35,12 @@ When no assistant is connected, a few named, switchable steps (profile intake, m
 ## Scope
 
 - **One person per installation:** no accounts, roles or sharing.
-- **Local:** data, credentials and browser profiles stay on your machine.
+- **Local:** data and credentials stay on your machine; browser profiles stay with Handyman.
 - **Site rules:** it respects each site's terms and rate limits, and a captcha is always left to a person.
 
 ## Design
 
-- [Design document](docs/design.md): components, data model, connector contract, browser sessions, MCP tools, scheduler and reports, and how the existing code maps onto them.
+- [Design document](docs/design.md): components, data model, connector contract, the Handyman split, MCP tools, scheduler and reports, and how the existing code maps onto them.
 - [Execution plan](docs/execution-plan.md): the phases, MCP first, each ending with an acceptance test through the MCP interface.
 
 ## Status

@@ -6,16 +6,16 @@
 
 ## 1. Decisions at a glance
 
-1. **One engine, local and single-user, in TypeScript.** The whole of job-seeker is TypeScript on Node.js: the engine core, the connectors, the browser host, the MCP server and the CLI. The migrated Python code is ported, and its tests are the behavioural spec for the port. One runtime keeps the install simple and matches Command Center (CC), whose cc-foundation and cc-engine are TypeScript. State lives in one SQLite database plus a data directory outside the repository. There are no accounts, roles or sharing.
+1. **One engine, local and single-user, in TypeScript.** The whole of job-seeker is TypeScript on Node.js: the engine core, the API connectors, the Handyman client, the MCP server and the CLI. The migrated Python code is ported, and its tests are the behavioural spec for the port. One runtime keeps the install simple and matches Command Center (CC), whose cc-foundation and cc-engine are TypeScript. State lives in one SQLite database plus a data directory outside the repository. There are no accounts, roles or sharing.
 2. **One boundary.** Every caller goes through the **Engine API**: the MCP server, the CLI and the background service. It is a versioned set of JSON-schema'd commands, queries and events, and it is the surface cc-engine's extension API can wrap later. job-seeker never imports CC code.
 3. **MCP is the main way in.** The MCP server is a local process that the assistant starts over stdio. There is no network transport for now. Every capability is reachable as an MCP tool, and every build phase is accepted through the MCP interface (see the execution plan).
-4. **Connectors follow CC's connector model.** A connector is a package with a `connector.json` manifest that uses CC's fields. It declares capability contracts such as `jobs.search@1`. API connectors and browser connectors are both TypeScript modules: API connectors run in the engine process, browser connectors on a browser host built on Playwright.
-5. **The background service runs in the user's own login session.** It is a macOS LaunchAgent, so it can open a visible browser window when a site needs a person. A run that hits a login or a captcha pauses, records the human step, notifies the user, opens a headed window on that site's profile, and carries on headless once the step is done (section 7). The MCP process hands runs to the service, and runs them in-process only when the service is down.
+4. **Connectors follow CC's connector model.** A connector is a package with a `connector.json` manifest that uses CC's fields. It declares capability contracts such as `jobs.search@1`. API connectors are TypeScript modules that run in the engine process. **Browser connectors are Handyman compartments.** Handyman is the standalone Electron desktop app that runs each site in an isolated compartment with the user's real sign-ins, trusted input, per-site rate caps, working hours and a stop-everything-at-the-first-warning rule. A browser connector in job-seeker is a thin adapter that satisfies its contracts by calling the matching compartment over Handyman's local endpoint (section 7). job-seeker has no browser host of its own.
+5. **The background service runs in the user's own login session.** It is a macOS LaunchAgent, so it can show notifications, read the user's keychain and run the user's assistant CLI, and it sits on the same machine as Handyman. A run step on a browser source that hits a login or a captcha is reported by the compartment; job-seeker pauses the step, records the human step and notifies the user, and the user clears it in Handyman (section 7). The MCP process hands runs to the service, and runs them in-process only when the service is down.
 6. **AI is compartmentalised.** Model calls go through one **AI adapter**, which uses the user's own assistant CLI (such as Claude Code or Codex) or an API key, as set in config. Only five named places may call it, and each can be switched off: profile intake, unattended match review, resume tailoring, research synthesis and criteria proposals (section 13). Everything else is deterministic, and every model output passes a deterministic check before it is kept.
 7. **Ranking is rule-based first.** Rule scores rank every job unattended. Judgement scores, from the user's assistant over MCP or from the AI adapter's match review, are stored next to them.
 8. **Nothing consequential happens without approval.** Criteria changes and LinkedIn profile edits are created as pending **approval records**. The user approves with a plain yes in chat (the assistant then calls a tool), in the CLI, or through MCP elicitation where the client supports it. Every decision is recorded (section 9.1).
-9. **LinkedIn is the first connector,** on the user's main account. It searches, reads job details, reads the user's own profile and alerts, and updates the user's own profile. Every profile write is shown as a diff and applied only after approval. It never messages, sends connection requests or applies. Page views are capped at 200 a day.
-10. **One install.** One npm package, then `job-seeker setup`, which installs the browser, a bundled Tectonic for LaTeX, the background service, and the MCP configuration for Claude Desktop and Codex (section 12.6).
+9. **LinkedIn is the first browser source,** on the user's main account, through Handyman's LinkedIn compartment. job-seeker searches, reads job details, reads the user's own profile and alerts, and updates the user's own profile through the compartment's actions. Every profile write is shown as a diff and applied only after approval. It never messages, sends connection requests or applies. Handyman enforces the site's rate caps; page views are capped at 200 a day.
+10. **One install.** One npm package, then `job-seeker setup`, which checks that Handyman is installed and reachable, installs a bundled Tectonic for LaTeX, the background service, and the MCP configuration for Claude Desktop and Codex (section 12.6).
 
 ## 2. The design principle, per capability
 
@@ -25,7 +25,7 @@ The assistant does what needs judgement or writing, in conversation with the use
 |---|---|---|---|---|
 | 1 | Profile intake | Reads the extracted source text and proposes claims. Discusses edits with the user | Turns a resume or LinkedIn profile text into evidenced claims | Text extraction from PDF, DOCX, LaTeX, free text and the LinkedIn profile. Stored sources. Versioned profile documents. Rejects a claim whose evidence quote does not match its source |
 | 2 | API connectors | Nothing at run time | Nothing | Connector registry, manifests, scoped HTTP, secrets, health |
-| 3 | Browser connectors | Tells the user when a human step is waiting | Nothing | Persistent profiles, headless runs, the human-step hand-off, pacing, challenge detection |
+| 3 | Browser connectors | Tells the user when a human step is waiting | Nothing | The Handyman client, the thin per-site adapters, the human-step record and notification. Handyman owns the profiles, sign-ins, pacing and the human-step hand-off |
 | 4 | Search by criteria | Optional judgement scores for top matches | Reviews top matches after a scheduled run | Criteria sets, query mapping, dedupe, rule ranking, provenance |
 | 5 | Market research | Weighs the findings and explains them to the user | Writes a synthesis of a research run | Dated, evidence-backed aggregates over collected jobs and connector data |
 | 6 | Criteria changes | Proposes changes and asks the user | Proposes changes from research, always as pending approvals | Proposals, approval records and the audit trail |
@@ -62,10 +62,11 @@ flowchart LR
     AI["AI adapter<br/>assistant CLI or API key"]
     DB[("SQLite and data directory")]
     CH["Connector host<br/>API connectors"]
-    BH["Browser host<br/>Playwright"]
+    HC["Handyman client<br/>local endpoint"]
     TEX["Resume renderer<br/>Tectonic, pandoc"]
     SEC["Secret store<br/>OS keychain"]
   end
+  HM["Handyman (separate app)<br/>one compartment per site"]
   SVCS["Service APIs and the mailbox"]
   WEB["Sites without an API"]
   AS -- "MCP" --> MCP --> API
@@ -75,7 +76,7 @@ flowchart LR
   CORE -. "five named call sites" .-> AI
   API --> CH --> SVCS
   CH --> SEC
-  API --> BH --> WEB
+  API --> HC --> HM --> WEB
   API --> TEX
 ```
 
@@ -83,15 +84,15 @@ flowchart LR
 
 | Process | Started by | Role |
 |---|---|---|
-| `job-seeker service` | The LaunchAgent, in the user's login session (section 12.1) | The only scheduler. Executes queued and scheduled runs, opens headed browser windows for human steps, sends notifications, runs maintenance |
+| `job-seeker service` | The LaunchAgent, in the user's login session (section 12.1) | The only scheduler. Executes queued and scheduled runs, sends notifications, runs maintenance |
 | `job-seeker mcp` | The assistant, over stdio | Serves MCP. It never schedules. It queues runs for the service, and executes a run itself only when the service is down |
-| `job-seeker` (CLI) | The user | Setup, secrets, sessions, approvals, reports, the pipeline page |
-| Browser host | Spawned on demand by whichever process executes the run | Owns Playwright contexts. Closes after 10 idle minutes |
+| `job-seeker` (CLI) | The user | Setup, secrets, approvals, reports, the pipeline page |
+| Handyman | The user, or its own background mode | A separate app, outside job-seeker. Runs every browser compartment and serves them on its local endpoint |
 | AI adapter backend | Spawned per call by the engine, when the configured backend is an assistant CLI | Runs one non-interactive call with no tools, then exits |
 
-**Concurrency.** SQLite runs in WAL mode with short write transactions. A run is claimed with a lease row (owner, expiry, heartbeat), so the service and an MCP process never execute the same run. Each binding runs one step at a time. Each browser session is serial.
+**Concurrency.** SQLite runs in WAL mode with short write transactions. A run is claimed with a lease row (owner, expiry, heartbeat), so the service and an MCP process never execute the same run. Each binding runs one step at a time. Handyman serialises each compartment's browser session.
 
-**Run hand-off.** An MCP tool that starts work (`search_run`, `alerts_ingest`, `linkedin_profile_apply` and so on) writes a `queued` run and touches `run/wake` in the data directory. The service watches that file and its own 30-second schedule tick, and writes its heartbeat every 5 seconds, separately from the tick. If the service's heartbeat is older than 15 seconds, the MCP process takes the run's lease and executes it in-process instead. Both paths run in the user's session, so both can open a headed window. If the MCP client disconnects mid-run, the lease expires and the next executor resumes the run from its step cursors. A tool can wait up to 60 seconds for a short run; otherwise it returns the run ID and the assistant follows it with `run_status`.
+**Run hand-off.** An MCP tool that starts work (`search_run`, `alerts_ingest`, `linkedin_profile_apply` and so on) writes a `queued` run and touches `run/wake` in the data directory. The service watches that file and its own 30-second schedule tick, and writes its heartbeat every 5 seconds, separately from the tick. If the service's heartbeat is older than 15 seconds, the MCP process takes the run's lease and executes it in-process instead. If the MCP client disconnects mid-run, the lease expires and the next executor resumes the run from its step cursors. A tool can wait up to 60 seconds for a short run; otherwise it returns the run ID and the assistant follows it with `run_status`.
 
 ### 3.1 Technology choices
 
@@ -101,7 +102,7 @@ flowchart LR
 | Language | TypeScript, `strict` | Compiled to JavaScript for the npm package |
 | Database | SQLite through Node's built-in `node:sqlite`, with `better-sqlite3` as the fallback | Chosen in phase 1 by a short check of WAL, `VACUUM INTO` and prebuilt availability; recorded in `docs/decisions/` |
 | MCP | The official TypeScript SDK, stdio transport | Tools, resources, prompts and elicitation |
-| Browser | Playwright with its pinned Chromium build | Persistent contexts, one profile per service |
+| Browser work | Handyman compartments, reached over Handyman's local endpoint | job-seeker runs no browser of its own (section 7) |
 | Secrets | The OS keychain through a maintained native binding, with an encrypted-file fallback | Section 5.5 |
 | Schemas | JSON Schema, validated at every boundary | The same schemas generate the TypeScript types |
 | Tests | Vitest, plus an MCP test client over stdio | Section 3 of the execution plan |
@@ -132,15 +133,13 @@ The data directory is `~/Library/Application Support/job-seeker` on macOS, `%LOC
   resumes/<resume_id>/         # resume.tex, resume.pdf, resume.docx, why-me.md, build.log
   reports/<yyyy>/<mm>/<run_id>.json|.html   # one report per run
   reports/latest.html, reports/pipeline.html
-  browser/profiles/<service>/  # one persistent profile per service, mode 0700
-  browser/captures/            # page captures from failed parses (kept 14 days)
   tools/tectonic/              # the pinned Tectonic build
   run/wake                     # touched to wake the service
   backups/                     # database snapshot taken before each migration
   logs/                        # redacted, rotated
 ```
 
-The Playwright Chromium build lives in Playwright's own cache, at the version job-seeker pins.
+Browser profiles, cookies and page captures live with Handyman, not in this directory.
 
 ### 5.2 Entities
 
@@ -151,7 +150,7 @@ The Playwright Chromium build lives in Playwright's own cache, at the version jo
 | `criteria_sets` / `criteria_versions` | set id, name, status; version, body (`criteria@1`), change_id | Every version comes from an approved change |
 | `criteria_changes` | id, kind (`create`, `modify`, `archive`), target, proposed body or patch, proposed_by (`user`, `assistant`, `ai_adapter`, `research:<run_id>`, `profile:<version>`), evidence refs, approval id, status (`proposed`, `approved`, `rejected`, `superseded`) | Append-only. Rejected proposals are kept |
 | `approvals` | id, subject kind (`criteria_change`, `linkedin_profile_edit`), subject id, payload sha256, summary, status (`pending`, `approved`, `rejected`, `superseded`, `expired`), requested_by, requested_at, decided_by, channel (`chat`, `cli`, `mcp_elicitation`), user words, decided_at | **The one approval record** (section 9.1). An approval is bound to its payload's hash |
-| `linkedin_profile_edits` | id, section (`headline`, `about`, `experience:<entry>`, `skills`), before (as read, with its source id), after, diff, grounding audit, approval id, status (`proposed`, `approved`, `applying`, `applied`, `verified`, `failed`, `superseded`, `rejected`), applied_at, verify source id | Section 7.5 |
+| `linkedin_profile_edits` | id, section (`headline`, `about`, `experience:<entry>`, `skills`), before (as read, with its source id), after, diff, grounding audit, approval id, status (`proposed`, `approved`, `applying`, `applied`, `verified`, `failed`, `superseded`, `rejected`), applied_at, verify source id | Section 7.6 |
 | `jobs` | id, dedupe key, canonical URL, title, company, location, workplace, salary, seniority, description (guarded, untrusted), `partial`, first_seen, last_seen, status (`active`, `unreachable`, `expired`) | One row per real posting after dedupe |
 | `job_sightings` | job id, connector, binding, external id, raw URL, run id, criteria set, record (`job.posting@1`), seen_at | Provenance: every source of every job |
 | `job_features` | job id, skills, normalised title, certifications, salary figures | Small and kept after descriptions are pruned, so research evidence stays valid |
@@ -162,9 +161,8 @@ The Playwright Chromium build lives in Playwright's own cache, at the version jo
 | `applications` / `application_events` | job id, current state, resume id; event (from, to, at, reported_by, channel, note) | States: `found`, `shortlisted`, `resume_prepared`, `applied`, `interview`, `offer`, `rejected` |
 | `schedules` | id, kind (`search`, `alerts`, `research`, `match_review`, `maintenance`), targets, schedule (interval, cron or manual), time zone, enabled, next_run_at | Survives restarts because it lives in the database |
 | `runs` / `run_steps` | run (kind, trigger, status, lease, report id); step (connector, binding, criteria set, status, cursor, counts, redacted error) | Run statuses: `queued`, `running`, `waiting_for_human`, `succeeded`, `partial`, `failed`, `cancelled` |
-| `connector_bindings` | id, connector id and version, settings, secret refs, health (`ok`, `degraded`, `needs_human`, `auth_expired`, `failing`, `disabled`) | One binding per connector and account |
-| `browser_sessions` | service, profile dir, state, engine version, last probe, page loads per day and hour | Section 7 |
-| `human_steps` | id, binding or session, run step, reason, detail, URL to open, opened_at, notified_at, window_opened_at, resolved_at, resolution | **The one needs-human signal** (section 7.3) |
+| `connector_bindings` | id, connector id and version, settings, secret refs, health (`ok`, `degraded`, `needs_human`, `auth_expired`, `failing`, `disabled`) | One binding per connector and account. For a browser connector the health mirrors what the Handyman compartment last reported |
+| `human_steps` | id, binding or compartment, run step, reason, detail, what the user should open, opened_at, notified_at, resolved_at, resolution | **The one needs-human signal** (section 7.4) |
 | `ai_calls` | id, purpose, backend, model, input refs, prompt sha256, output, validation result, duration, status, at | Every model call, kept for audit |
 | `events` | cursor, type, entity, payload, at | Section 4 |
 
@@ -202,7 +200,7 @@ job-seeker rejects a version whose quotes do not match their source spans (white
 
 - **Storage.** API keys and OAuth tokens go in the OS keychain (macOS Keychain, Windows Credential Manager, the Linux Secret Service) through a maintained native binding. Where no keychain backend exists, they go in an encrypted file whose key file sits outside the data directory with mode 0600. That fallback protects against accidental copies and backups, not against someone using the same OS account, and setup says so.
 - **Entry.** Secrets are entered only through the CLI (`job-seeker secrets set`, or `job-seeker connect gmail`, which runs the OAuth loopback flow in the system browser). They never pass through MCP, so the model never sees them. This includes an API key for the AI adapter.
-- **Browser cookies** stay in the browser profile. Chromium encrypts them with the OS keychain where one exists (section 12.3).
+- **Browser cookies and sign-ins** stay with Handyman's compartments; job-seeker never sees them. (Section 7.)
 - **Redaction.** Logs, reports and AI adapter inputs pass through a redactor that masks every stored secret value. Cookie and authorization headers are never logged.
 
 ## 6. Connector contract
@@ -211,14 +209,14 @@ job-seeker rejects a version whose quotes do not match their source spans (white
 
 | | API connector | Browser connector |
 |---|---|---|
-| Talks to | A service API over HTTPS, or the mailbox through the `mailbox@1` contract | A site in a signed-in, persistent browser profile |
-| Code | TypeScript module with `ctx.http` and `ctx.mailbox` | TypeScript module with `ctx.browser`, a guarded Playwright page |
-| Sign-in | `api_key`, `oauth2` or `none` | `browser_session` |
-| Hosted by | The connector host, in the engine process | The browser host, a Node child process |
+| Talks to | A service API over HTTPS, or the mailbox through the `mailbox@1` contract | A Handyman compartment, which talks to the site in the user's signed-in session |
+| Code | TypeScript module with `ctx.http` and `ctx.mailbox` | TypeScript module with `ctx.handyman`, a client for one compartment |
+| Sign-in | `api_key`, `oauth2` or `none` | Owned by Handyman: one saved sign-in per site, in the compartment |
+| Hosted by | The connector host, in the engine process | The connector host, in the engine process; the browser itself runs in Handyman |
 
 ### 6.2 Manifest
 
-A connector's `connector.json` uses CC's manifest fields: `manifestVersion`, `id`, `name`, `version`, `kind`, `description`, `implements`, `auth`, `permissions`, `actions` (each with a risk class, schemas, idempotency and an optional rate limit), `syncs`, `records`, `settingsSchema`, `browser` (service, origins, login URL, signed-in probe, challenge signatures, `requiresHeaded`, pacing, `selectorsVersion`), `limits` and `flags` (`tos_risk`, `unofficial_surface`, `beta`). job-seeker's additions all sit under one key, `x-jobseeker`, so a CC port can move or drop them:
+A connector's `connector.json` uses CC's manifest fields: `manifestVersion`, `id`, `name`, `version`, `kind`, `description`, `implements`, `auth`, `permissions`, `actions` (each with a risk class, schemas, idempotency and an optional rate limit), `syncs`, `records`, `settingsSchema`, `browser` (for a browser connector: the Handyman compartment it needs, the site's origins and a `selectorsVersion`), `limits` and `flags` (`tos_risk`, `unofficial_surface`, `beta`). job-seeker's additions all sit under one key, `x-jobseeker`, so a CC port can move or drop them:
 
 - `requires`: contracts the connector consumes, such as `mailbox@1`;
 - `mail.senders`: the only senders an alert connector may read;
@@ -284,7 +282,7 @@ interface ConnectorContext {
   run: RunInfo;                 // run id, connector, version, binding, action or sync, deadline
   settings: Readonly<Record<string, unknown>>;  // validated against settingsSchema
   http?: ScopedHttp;            // API connectors: HTTPS only, hosts from permissions.network.hosts, auth injected by the host
-  browser?: GuardedBrowser;     // browser connectors: ctx.browser.page(), a guarded Playwright page
+  handyman?: HandymanCompartment; // browser connectors: one compartment over Handyman's local endpoint
   mailbox?: Mailbox;            // only with x-jobseeker.requires mailbox@1; read-only, limited to mail.senders
   state: KeyValue;              // per-binding cursor store, at most 64 KB
   clock: Clock;                 // injectable, for deterministic tests
@@ -300,31 +298,31 @@ interface ConnectorContext {
 
 1. **No AI in connectors.** Connectors make no model calls and no judgement calls. A static check fails any connector that imports the AI adapter or an AI SDK, or names an AI provider host.
 2. **Determinism.** The same fixture input, settings, cursor and clock give byte-identical output and records.
-3. **Credentials stay with the host.** A connector never receives a raw secret. The host injects authentication into requests.
+3. **Credentials stay with the host.** An API connector never receives a raw secret; the host injects authentication into requests. A browser connector never receives a cookie or credential at all: the sign-in lives in Handyman's compartment, and only records and compartment status cross the endpoint.
 4. **Untrusted text.** Text from services passes `posting_guard` at ingest. MCP returns it wrapped as `{"untrusted_page_content": ...}`, and the AI adapter receives it only inside a marked untrusted block.
 5. **Site rules.**
    - Postings are fetched only through the `web-posting` connector, which enforces robots.txt and skips every `noFetchHosts` entry.
    - API hosts follow their API terms and are not robots-gated.
-   - Rate limits and pacing come from the manifest, and a binding may only tighten them.
+   - Rate limits and pacing come from the manifest, and a binding may only tighten them. For a browser connector the manifest's limits are the budget job-seeker plans against; Handyman's own per-site caps, working hours and stop-at-first-warning rule always apply on top (section 7.5).
 6. **External writes need approval.** An action with risk `write_external` runs only with an approved, hash-matched approval record, and never from a schedule.
 7. **The testing kit.** `job-seeker connector test <id>` runs offline and checks:
    - the manifest against its schema;
    - the static checks;
-   - fixture tests for every action and sync;
+   - fixture tests for every action and sync (a browser connector's fixtures run against a fake Handyman endpoint, the same shape `linkedin/client.py`'s tests already use);
    - determinism;
-   - that a login-page fixture leads to `needsHuman`;
+   - that a compartment's needs-human report (sign-in wall, challenge) leads to a human step, never a retry loop;
    - that every `write_external` action refuses to run without a matching approval;
    - fixture hygiene: no real names, emails, phone numbers, tokens or cookies.
 
 ### 6.6 Registry: adding a source
 
-Each connector lives in `connectors/<id>/` with `connector.json`, its code (`index.ts`, plus `extractors.ts` for a browser connector), `fixtures/`, `tests/` and a `README.md` that says what it does and what it never does. The registry is `connectors/registry.json`: one entry per connector with id, version and enabled flag. **Adding a source means adding one directory and one registry line.** A test fails if a directory is unregistered, or if a registry entry has no directory.
+Each connector lives in `connectors/<id>/` with `connector.json`, its code (`index.ts`; a browser connector is a thin adapter over the Handyman client), `fixtures/`, `tests/` and a `README.md` that says what it does and what it never does. The registry is `connectors/registry.json`: one entry per connector with id, version and enabled flag. **Adding a source means adding one directory and one registry line.** A test fails if a directory is unregistered, or if a registry entry has no directory.
 
 ### 6.7 The initial connectors
 
 | id | Kind | Implements | Origin |
 |---|---|---|---|
-| `linkedin` | browser | `jobs.search@1`, `jobs.recommended@1`, `jobs.detail@1`, `jobs.alerts@1`, `profile.read@1`, `profile.write@1` | the vendored LinkedIn app (section 7.4) |
+| `linkedin` | browser (Handyman compartment) | `jobs.search@1`, `jobs.recommended@1`, `jobs.detail@1`, `jobs.alerts@1`, `profile.read@1`, `profile.write@1` | Handyman's LinkedIn compartment (section 7.5) |
 | `gmail` | api (oauth2, read-only scope) | `mailbox@1` | `tools/gmail_alerts.py` |
 | `linkedin-alerts`, `indeed-alerts`, `ladders-alerts`, `employer-alerts` | api (mailbox) | `jobs.alerts@1` | `gmail_alerts.py` link extraction, `sources/registry.py`, `alert-sources.json` |
 | `web-posting` | api (robots-gated GET) | `jobs.detail@1` | `tools/fetch_page.py`, `robots_check.py`, `page_decode.py` |
@@ -333,100 +331,98 @@ Each connector lives in `connectors/<id>/` with `connector.json`, its code (`ind
 | `github-public` | api (none) | none: an action that reads public repositories, used by `profile_expand_scan` | `expand/tools/github_source.py` |
 | `notion` | api (api_key) | `tracker.export@1` | `tools/notion_client.py`, `notion_sync.py` |
 
-WhatsApp is not in v1. No other browser service is planned; the session model supports one if a job-search use appears.
+WhatsApp is not in v1. Naukri, iimjobs and any other browser-only site join the same way LinkedIn does: as a Handyman compartment plus one thin connector here, when a job-search use appears (section 7.8 lists what that needs from Handyman).
 
-## 7. Browser-session lifecycle
+## 7. Browser work through Handyman
 
-### 7.1 Mechanism
+Every piece of job-seeker's work that touches a website through a browser runs as a **Handyman compartment**. Handyman is a standalone Electron desktop app (its own repository and design): it runs each site in an isolated compartment with the user's real sign-ins, trusted input, per-site rate caps, working hours and a stop-everything-at-the-first-warning rule. One host for all site work means one set of safety rules per site, one sign-in per site, and one connector shape. job-seeker has no browser host, no browser profiles and no Playwright dependency of its own.
 
-- **Profiles.** One Playwright persistent context per service (`launchPersistentContext(profileDir)`). Each service has its own profile directory, so sessions share no cookies or storage.
-- **One build for both modes.** Headless runs and headed windows use the same full Chromium build (Playwright's `chromium` channel, so headless uses Chromium's new headless mode in that build) on the **same profile directory**.
-- **One process per profile.** Chromium locks a profile to one process. Switching modes therefore closes one context cleanly, which flushes cookies, and launches the other.
-- **Where windows come from.** Every process that executes runs lives in the user's login session: the service is a LaunchAgent limited to the user's graphical session, and the in-process fallback runs inside the MCP process, which the user's assistant started. Either one can open a visible window. A system-wide daemon could not, which is why there is none.
+### 7.1 The split
 
-### 7.2 States
+- **Handyman owns everything that touches a website through a browser:** each site (LinkedIn today; Naukri, iimjobs or any other browser-only site when one is needed) is a Handyman compartment. Profiles, cookies, sign-ins, pacing, rate caps, working hours, challenge detection and the human-step hand-off all live there, under Handyman's rules.
+- **job-seeker owns the job-search records and logic:** profile, saved searches, jobs seen, applications, ranking, research, resume tailoring, the AI adapter and the MCP server. Official-API connectors (for example Adzuna) keep running in job-seeker's own engine, since they need no browser.
 
-```mermaid
-stateDiagram-v2
-  [*] --> new
-  new --> signing_in: user opens the session
-  signing_in --> signed_in: signed-in probe passes
-  signed_in --> running: a run step takes the session lease (headless)
-  running --> signed_in: step done, context closed
-  running --> needs_human: login wall, challenge, 2FA or unexpected page
-  signed_in --> needs_human: health probe fails
-  needs_human --> resolving: headed window opens on the same profile
-  resolving --> signed_in: probe passes and no challenge remains
-  resolving --> needs_human: window closed unresolved
-  needs_human --> disabled: user disables the binding
-  signed_in --> [*]: sign out deletes the profile
-```
+### 7.2 The endpoint and the connector adapter
 
-1. **Sign in.** `job-seeker sessions open linkedin`, or the MCP tool `session_open`, creates the profile and opens a headed window at the manifest's `loginUrl`. The user signs in by hand. The host checks the read-only `probeSignedIn` every few seconds. When it passes, the session is `signed_in` and the window closes.
-2. **Run headless.** A run step takes the session's lease, and the host launches the profile headless.
-   - Every page load goes through the session's pacer: one at a time, a random 3 to 7 second gap, at most 40 loads an hour, and the service's daily cap (200 for LinkedIn). Page loads are counted in the database, so the service and an in-process run share one budget. A cap hit fails fast with a retry time, and the rest of the step is deferred to the next run.
-   - After each navigation, the host checks the manifest's challenge signatures, common CAPTCHA frames and login URLs.
-3. **Human step.** On a match, or when the connector calls `ctx.needsHuman`:
-   1. **Pause.** The host records the URL and closes the headless context. The step keeps a cursor so it can resume, and is marked `waiting_for_human`.
-   2. **Record.** It sets the session to `needs_human` and writes a `human_steps` row.
-   3. **Notify.** It sends an OS notification naming the site and the reason, and the MCP `status` tool shows the step.
-   4. **Open.** The executing process (the service, or the MCP process when the service is down) reopens the same profile headed at that URL. The window is the user's to work in; job-seeker types nothing into it.
-4. **Back to headless.** The user finishes the step in the headed window. Once the probe passes and no challenge signature remains, the host closes the window, sets the session to `signed_in` and resolves the human step. The waiting step then carries on headless in the same profile from its cursor. The user can also say so with `session_done` or `job-seeker sessions done linkedin`.
-5. **Time-out.** A run started from MCP or the CLI waits up to 10 minutes. A scheduled run waits up to 12 hours, or until the same schedule's next run if that comes sooner. Then the step ends as `needs_human` and the run as `partial`, and the window closes. While the session stays `needs_human`, later runs skip that connector without loading a page and list it again under "Waiting for you". There is no retry loop against the site.
-6. **Sign out** deletes the profile directory after the user confirms.
+Handyman serves its compartments on a local-only endpoint, the same shape the predecessor's `linkedin/client.py` already uses for LinkedIn: a UNIX socket with mode 0600 under Handyman's user-data directory on macOS and Linux, a named pipe on Windows, speaking newline-delimited JSON-RPC. The endpoint is resolved from Handyman's user-data directory, with an environment override for tests.
 
-If the user is away or the screen is locked, the window and the notification are waiting when they return; nothing proceeds until they act.
+- **One client.** The engine has one Handyman client module. It never launches Handyman, never touches a credential, and turns every transport failure or compartment-reported "needs you" into a specific, actionable error - never a raw socket or timeout traceback and never a retry loop.
+- **A browser connector is a thin adapter.** It keeps the connector contract unchanged: it declares `implements: ["jobs.search@1", ...]` in its manifest, and its TypeScript module maps each contract action onto the compartment's actions through `ctx.handyman`. From the engine's side a search on LinkedIn and a search on Adzuna look the same: a contract call that returns `job.posting@1` records. Criteria mapping, `unsupported` reporting and result validation happen in the adapter, exactly as for an API connector.
+- **Records cross, pages don't.** Only contract records, counters and compartment status cross the endpoint. Posting descriptions pass `posting_guard` at ingest like every other untrusted text.
 
-### 7.3 One needs-human signal
+### 7.3 The lifecycle of a browser step
 
-`human_steps` is the only record of "waiting for you", for browser sessions and for everything else that needs a person: an expired OAuth token, a keychain that denies access, an AI adapter backend that is signed out, or a connector whose selectors broke. Every surface reads that table:
+1. **Sign in, once, in Handyman.** The user signs in to each site by hand in that site's Handyman compartment. job-seeker never sees the credential, and a compartment's sign-in survives restarts because Handyman owns the profile.
+2. **Run.** A run step on a browser connector calls the compartment through the client. Handyman paces the session - one page load at a time, its per-site caps and working hours - and enforces them even if job-seeker asks for more.
+3. **Needs human.** When the compartment reports a sign-in wall, a challenge, two-factor or an unexpected page, the adapter raises `needsHuman`: the step is paused with its cursor, a `human_steps` row is written, the user is notified, and the report's "Waiting for you" section names the site, the reason and the remedy: open Handyman and clear the step in that compartment. job-seeker opens no window itself; the window is Handyman's, and job-seeker types nothing into any browser.
+4. **Resume.** Once the compartment reports the session healthy again, the waiting step resumes from its cursor on the next run. The user can also mark the step done from the CLI after clearing it.
+5. **Time-out and stop.** A step left waiting past its limit ends as `needs_human` and the run as `partial`. While a compartment reports needs-human, later runs skip that connector and list it again under "Waiting for you". Handyman's stop-everything-at-the-first-warning rule applies inside the compartment at all times; job-seeker adds no retry loop against the site.
+
+If the user is away, the notification and Handyman's own surface are waiting when they return; nothing proceeds until they act.
+
+### 7.4 One needs-human signal
+
+`human_steps` is the only record of "waiting for you", for browser compartments and for everything else that needs a person: an expired OAuth token, a keychain that denies access, an AI adapter backend that is signed out, or a compartment that reports a challenge. Every surface reads that table:
 
 - the report's and the pipeline page's "Waiting for you" section;
 - the MCP `status` tool and the `jobseeker://human-steps` resource;
 - `job-seeker status`;
 - the OS notification.
 
-### 7.4 Guards and the LinkedIn connector
+### 7.5 Guards, pacing and the LinkedIn compartment
 
-The browser host applies these guards to every run:
+The browser guards are Handyman's, applied to every compartment: the user's real sign-in per site, trusted input only, per-site rate caps and working hours, no evasion, and stop-everything-at-the-first-warning. job-seeker never solves a CAPTCHA, types a credential or answers a security check - it has no browser to do it with. job-seeker's own rules still apply to what crosses the endpoint: untrusted text passes `posting_guard`, and connectors make no AI calls (section 6.5).
 
-- navigation pinned to the manifest's origins;
-- no input into password, OTP or 2FA fields;
-- no cookie or storage export to connector code;
-- no downloads or permission grants unless the manifest declares them;
-- **no evasion**: no changes to `navigator.webdriver`, the user agent or the fingerprint.
-
-job-seeker never solves a CAPTCHA, types a credential or answers a security check.
-
-The `linkedin` connector reuses the vendored app's extractors, URL builders, pacing defaults, result cache, failed-parse captures and the "LinkedIn needs you" detection, ported to TypeScript. The app's Electron window and socket endpoint are replaced by the browser host; they stay in use by the predecessor's LinkedIn ingest until phase 8 of the execution plan. It uses the user's main account.
+The `linkedin` connector is the first browser connector, an adapter over Handyman's LinkedIn compartment. The compartment reuses the vendored app's extractors, URL builders, pacing defaults, result cache, failed-parse captures and the "LinkedIn needs you" detection; the predecessor keeps reading LinkedIn through the same compartment (`linkedin/client.py`) until phase 8 of the execution plan. It uses the user's main account.
 
 | Need | Action | Notes |
 |---|---|---|
 | Job search with saved criteria | `search_jobs` | Criteria map to LinkedIn's keyword box and its experience-level, workplace, date-posted and job-type filters. Pagination stops at the limit |
 | Jobs LinkedIn recommends for the profile | `recommended_jobs` | Reads the signed-in account's recommended-jobs collection |
 | Job details | `get_job` | Fetched only for the top candidates of a run, within the daily budget |
-| The person's own profile | `read_own_profile` | New extractor. Stored as a `linkedin_profile` source for intake, and as the "before" of an edit |
+| The person's own profile | `read_own_profile` | Stored as a `linkedin_profile` source for intake, and as the "before" of an edit |
 | Job-alert results | `alerts` sync | Lists the account's alerts, then replays each alert's search. LinkedIn's alert emails remain a second route through `linkedin-alerts`, which needs no session |
-| Own-profile edits | `apply_profile_edit` | Risk `write_external`. Section 7.5 |
+| Own-profile edits | `apply_profile_edit` | Risk `write_external`. Section 7.6 |
 | People search | `search_people` | Read-only and `manualOnly`: one MCP tool, `linkedin_search_people`, on a direct user request. A schedule that names it is refused |
-| Save job | `save_job` | The app's write. Not exposed |
+| Save job | `save_job` | The compartment's write. Not exposed |
 
 Messaging, connection requests and applying do not exist as actions.
 
-**Budget.** At most 200 page loads a day (the user's local day) and 40 an hour, one at a time with a 3 to 7 second gap. A planner shared by all criteria sets and schedules spends the day's budget in this order: human-requested calls, profile reads and edits, alerts, saved searches, then details for top candidates. Whatever does not fit is deferred, and the report says so.
+**Budget.** At most 200 page loads a day (the user's local day) and 40 an hour, one at a time with a 3 to 7 second gap - configured as the compartment's caps in Handyman, which enforces them. A planner in job-seeker, shared by all criteria sets and schedules, spends the day's budget in this order: human-requested calls, profile reads and edits, alerts, saved searches, then details for top candidates. Whatever does not fit is deferred, and the report says so. Handyman's caps are the hard limit whatever the planner asks for, and its counters are what the report shows.
 
 The binding is created only after the user accepts its `tos_risk` flag. Section 18 of the execution plan covers the LinkedIn risks.
 
-### 7.5 LinkedIn profile edits
+### 7.6 LinkedIn profile edits
 
 1. **Draft.** In chat, the assistant drafts an edit with the user and calls `linkedin_profile_propose({section, after})`. v1 supports the headline, the About section, the description of an existing experience entry, and adding or removing skills.
 2. **Read and diff.** job-seeker reads the live section (`read_own_profile`), stores it as a source, and builds a diff of before and after. It checks LinkedIn's field length limits.
 3. **Ground.** The deterministic grounding audit from resumes runs on the new text: numbers, dates, titles, employers and tools must appear in the current profile's claims or their evidence. A failure blocks the proposal and names the token. To add a new fact, the user first states it, and it is recorded as a `user_statement` source.
 4. **Approve.** The proposal becomes a pending approval record showing the diff. The user approves it (section 9.1). An approval binds to the payload's hash, so any change to the text needs a new approval.
-5. **Apply.** `linkedin_profile_apply({approval_id})` queues a run. Before writing, the connector reads the section again; if it no longer matches the diff's "before", the edit is `superseded` and the user is asked again. The edit runs in a **visible headed window**, at the same pace as reads, using LinkedIn's own edit form, so the user can watch it. At most 5 edits a day.
-6. **Verify.** After saving, the connector reads the section again and compares it with the approved text. A match marks the edit `verified`. A mismatch, or an edit form that no longer matches the connector's selectors, stops the edit, opens a human step and leaves the approved text ready for the user to paste in the open window.
+5. **Apply.** `linkedin_profile_apply({approval_id})` queues a run. Before writing, the compartment reads the section again; if it no longer matches the diff's "before", the edit is `superseded` and the user is asked again. The edit runs through the compartment's trusted input, at the same pace as reads, using LinkedIn's own edit form, with the compartment visible so the user can watch it. At most 5 edits a day.
+6. **Verify.** After saving, the compartment reads the section again and compares it with the approved text. A match marks the edit `verified`. A mismatch, or an edit form that no longer matches the compartment's selectors, stops the edit, opens a human step and leaves the approved text ready for the user to paste in Handyman's window.
 
-The diff tells the user that LinkedIn may share some profile changes with their network, depending on the user's own LinkedIn setting. job-seeker does not change that setting. A binding setting, `profileWrites: assisted`, turns step 5 into "open the edit form headed and show the approved text" so the user saves by hand; it is the fallback if automated edits prove risky.
+The diff tells the user that LinkedIn may share some profile changes with their network, depending on the user's own LinkedIn setting. job-seeker does not change that setting. A binding setting, `profileWrites: assisted`, turns step 5 into "the compartment opens the edit form and shows the approved text" so the user saves by hand; it is the fallback if automated edits prove risky.
+
+### 7.7 When Handyman is not running
+
+A scheduled, unattended run that needs a browser source requires Handyman to be running (open or in the background). job-seeker treats an unreachable endpoint as a **skipped source, never a failure and never a retry loop**:
+
+1. **Probe once per step.** Before a browser step, the client probes the endpoint. If Handyman is not running, or the compartment is absent, the step is marked `skipped` with the reason `handyman_unreachable` and the run moves on.
+2. **API sources still run.** A skipped browser step does not hold up the rest of the run: Gmail alerts, Adzuna, `web-posting` and every other API connector execute normally, and the run finishes `partial` when something was skipped.
+3. **The report says so plainly.** The skipped sources are named in the report's connector section and summary, with one line of remedy: start Handyman and re-run, or wait for the next scheduled run. `status` and the pipeline page show the same, so the gap is visible without opening the report.
+4. **No catch-up storm.** The next scheduled run probes again and runs the browser steps if Handyman is back; a missed schedule still fires once, not once per missed slot (section 10.1). Nothing queues up against a site.
+
+A run started by hand from MCP or the CLI behaves the same way, but the tool's answer says immediately that Handyman is not running, so the user can start it and ask again.
+
+### 7.8 What job-seeker needs from Handyman
+
+Requirements that fall out of this split, for Handyman's own roadmap (nothing here is built by job-seeker):
+
+1. **A compartment action surface** per browser site that covers the contracts the adapter maps: for LinkedIn, job search with filters, recommended jobs, job details, job alerts, own-profile read, own-profile edit and people search.
+2. **Status and needs-human signalling** over the endpoint: reachable, signed-in state, challenge or sign-in wall with a reason, and per-site page-load counters for the day and hour.
+3. **Enforced per-site caps, pacing, working hours and the stop-at-first-warning rule** inside each compartment, whatever the caller asks for.
+4. **Availability for scheduled runs:** Handyman running (open or in the background) when job-seeker's schedules fire, or browser sources are skipped per section 7.7.
+5. **New compartments** (for example Naukri or iimjobs) when a browser-only site gains a job-search use; each then gets one thin connector here.
 
 ## 8. Search, dedupe and ranking
 
@@ -463,7 +459,7 @@ The MCP server is the TypeScript SDK's stdio server. Each tool is an adapter ove
 | Capability | Tools | Resources and prompts |
 |---|---|---|
 | 1 Profile | `profile_import_source` (file path, or pasted text from an attachment), `profile_read_linkedin`, `profile_intake_run` (AI adapter), `profile_get`, `profile_save_version`, `profile_add_statement`, `profile_diff`, `profile_expand_scan` | `jobseeker://profile/current`, `jobseeker://profile/versions/{n}`, `jobseeker://profile/sources/{id}`; prompt `intake_profile` |
-| 2, 3 Connectors and sessions | `connectors_list`, `connector_configure` (no secrets), `sessions_list`, `session_open`, `session_done`, `human_steps_list`, `linkedin_search_people` (manual only) | `jobseeker://connectors`, `jobseeker://human-steps` |
+| 2, 3 Connectors | `connectors_list` (with each browser connector's compartment state as Handyman last reported it), `connector_configure` (no secrets), `human_steps_list`, `linkedin_search_people` (manual only) | `jobseeker://connectors`, `jobseeker://human-steps` |
 | 4 Search | `criteria_list`, `criteria_get`, `criteria_from_profile`, `search_run` (saved sets or one unsaved criteria body), `alerts_ingest`, `run_status`, `jobs_list`, `job_get`, `jobs_search`, `rank_submit`, `match_review_run` (AI adapter) | `jobseeker://criteria/{id}`, `jobseeker://jobs/{id}`; prompt `review_matches` |
 | 5, 6 Research and criteria | `research_run`, `research_get`, `research_list`, `research_compare`, `research_annotate`, `research_synthesize` (AI adapter), `criteria_propose` | `jobseeker://research/latest`; prompt `review_research` |
 | Approvals | `approvals_list`, `approval_get`, `approval_decide` | `jobseeker://approvals/pending` |
@@ -489,7 +485,7 @@ Rules:
 - The AI adapter can create proposals but can never decide one.
 - The pipeline page, reports and `status` list pending approvals.
 
-**The whole flow from Claude Desktop or Codex.** `session_open` (LinkedIn sign-in), `profile_read_linkedin`, `profile_save_version`, `criteria_from_profile`, `approval_decide`, `search_run`, `jobs_list`, `linkedin_profile_propose`, `approval_decide`, `linkedin_profile_apply`, then `research_run`, `criteria_propose`, `schedule_set`, `resume_prepare`, `resume_render`, `application_prepare` and `application_set_state`.
+**The whole flow from Claude Desktop or Codex.** With LinkedIn signed in once in Handyman's compartment: `profile_read_linkedin`, `profile_save_version`, `criteria_from_profile`, `approval_decide`, `search_run`, `jobs_list`, `linkedin_profile_propose`, `approval_decide`, `linkedin_profile_apply`, then `research_run`, `criteria_propose`, `schedule_set`, `resume_prepare`, `resume_render`, `application_prepare` and `application_set_state`.
 
 **Compatibility.** The predecessor's Python MCP server keeps working under its own configuration until the port retires it (execution plan, section 4). From phase 8 it is trimmed to the tools not yet replaced (`tailor` and `upskill_report`), and it is removed once phases 9 and 10 have both shipped. The new server uses the new tool names only.
 
@@ -509,7 +505,7 @@ Rules:
   - maintenance weekly.
 - **Firing.**
   - The service checks due schedules every 30 seconds and adds plus or minus 10 percent jitter.
-  - After sleep, log-out or downtime it runs a missed schedule once, not once per missed slot. The service runs only while the user is logged in, which is the price of being able to open windows.
+  - After sleep, log-out or downtime it runs a missed schedule once, not once per missed slot. The service runs only while the user is logged in, which is the price of working in the user's session.
   - Each schedule has at most one active run.
 - **Runs.** A run is a list of steps, one per connector, binding and criteria set. The steps run independently: a LinkedIn human step does not hold up Adzuna.
 - **Retries.** Retries apply only to idempotent actions, after network errors, HTTP 429 or 5xx, with backoff at 1, 5 and 25 minutes. A binding that fails 3 runs in a row becomes `failing` and opens a human step.
@@ -536,7 +532,7 @@ Every run writes `reports/<yyyy>/<mm>/<run_id>.json` (`report@1`) and a matching
                   { "connector": "linkedin", "status": "needs_human", "records": 0, "detail": "challenge",
                     "page_loads_today": 112, "page_load_cap": 200 } ],
   "waiting_for_you": [ { "human_step_id": "hs_0007", "service": "linkedin", "reason": "challenge",
-                         "since": "2026-12-01T07:03:12Z", "how": "job-seeker sessions open linkedin" } ],
+                         "since": "2026-12-01T07:03:12Z", "how": "open Handyman and clear the step in the LinkedIn compartment" } ],
   "pending_approvals": [ { "approval_id": "apr_0043", "kind": "criteria_change", "summary": "Add the title 'Group Product Manager'", "requested_by": "research:res_0011" } ]
 }
 ```
@@ -571,9 +567,9 @@ Paths are relative to the repository root. **Port** means rewrite in TypeScript 
 | `tailor/tools/latex_templates/cover.*` | Reshape | The "why me" note's template |
 | `tailor/tools/export_resume.py` (pandoc and .docx route) | Port | The `.docx` output of `resume_render`, when pandoc is present |
 | `tailor/tailor.md`, `tailor/agents/resume-reviewer.md` | Reshape | MCP prompt `tailor_resume`, which includes the reviewer's checks, and the adapter's tailoring instructions |
-| `linkedin/app/src/extractors.js`, `urls.js`, `pacing.js`, `cache.js`, `format.js`, `capture.js` and their tests | Port | The `linkedin` connector and the browser host's pacer, in TypeScript |
-| `linkedin/app/src/main.js`, `server.js`, `paths.js`, `bin/linkedin-mcp.js` | Retire | Replaced by the browser host's persistent contexts and the one MCP server. The "needs you" logic moves across |
-| `linkedin/client.py`, `linkedin/source.py` | Reshape | The connector's criteria-driven search; the browser host replaces the client |
+| `linkedin/app/src/extractors.js`, `urls.js`, `pacing.js`, `cache.js`, `format.js`, `capture.js` and their tests | Handyman's | The LinkedIn compartment's extraction, pacing, cache and captures. The compartment already serves the predecessor's LinkedIn ingest; job-seeker's `linkedin` connector calls the same compartment actions |
+| `linkedin/app/src/main.js`, `server.js`, `paths.js`, `bin/linkedin-mcp.js` | Handyman's | The compartment shell and its local endpoint. job-seeker builds no browser host and no replacement for them |
+| `linkedin/client.py`, `linkedin/source.py` | Reshape | The engine's Handyman client (the endpoint client, one per compartment) and the `linkedin` connector's criteria mapping, in TypeScript |
 | `mcp/server.py` | Retire | Replaced by the TypeScript SDK server. Its tests become the protocol error-path spec |
 | `mcp/tools.py` | Reshape | Each old tool maps to a new tool over the Engine API (execution plan, section 4) |
 | `dashboard/build.py` | Reshape | The pipeline page and the per-run report pages |
@@ -596,13 +592,13 @@ Paths are relative to the repository root. **Port** means rewrite in TypeScript 
 
 **Why.**
 
-- It runs in the user's session, which is what opening a headed browser window, showing notifications, reading the user's keychain and running the user's assistant CLI all need. A system-wide service can do none of them.
+- It runs in the user's session, which is what showing notifications, reading the user's keychain and running the user's assistant CLI all need, and it sits on the same machine as Handyman, whose local endpoint is per-user. A system-wide service can do none of them.
 - `KeepAlive` restarts it after a crash; a plain login item cannot.
 - An app with its own UI would duplicate what the assistant, the pipeline page and reports already provide.
 
-**How it works with a browser that has to be open.** Most runs are headless and need no window. When a site needs a person, the service itself opens the headed window on that site's profile, as section 7.2 describes, because it lives in the session where the user is. The user does the step and the run resumes headless. When the service is down, the MCP process runs the work in-process, also in the user's session, so the same hand-off works.
+**How it works with a browser that has to be open.** Browser windows belong to Handyman, not to job-seeker. When a browser step needs a person, the compartment reports it, the service records the human step and notifies the user, and the user clears it in Handyman (section 7.3). A scheduled run whose browser sources are unreachable because Handyman is not running skips them with a clear report entry and runs its API sources anyway (section 7.7).
 
-**When no assistant is connected,** a "waiting for you" step reaches the user through the OS notification, the opened window, the pipeline page and the report. `job-seeker status` lists it. If the service is not installed, `status` says so, and runs started from MCP or the CLI still execute in-process.
+**When no assistant is connected,** a "waiting for you" step reaches the user through the OS notification, Handyman's own surface, the pipeline page and the report. `job-seeker status` lists it. If the service is not installed, `status` says so, and runs started from MCP or the CLI still execute in-process.
 
 ### 12.2 Notifications
 
@@ -616,21 +612,15 @@ Notifications use `osascript` on macOS (later `notify-send` on Linux and a Power
 
 ### 12.3 Browser engine
 
-**Decision:** Playwright persistent contexts on the full Chromium build, one profile directory per service, with the same build and the same profile for headless and headed runs (section 7.1).
+**Decision:** none. job-seeker runs no browser of its own. Every site that needs a browser is a Handyman compartment, reached over Handyman's local endpoint (section 7).
 
 **Why.**
 
-- One build in both modes keeps the browser identical between the user's sign-in and later headless runs, which gives the most durable sessions.
-- Persistent contexts are documented Playwright API.
-- The existing extractor pattern ports directly.
-- It matches the browser model of CC's connector design, so connectors stay portable.
+- Handyman already runs each site in an isolated compartment with the user's real sign-ins, trusted input, per-site rate caps, working hours and a stop-everything-at-the-first-warning rule. job-seeker already reads LinkedIn through Handyman's LinkedIn compartment over the local socket.
+- Two browser automations on the user's accounts would mean two sets of safety rules, two sign-ins per site and two pacing budgets. One host gives every site the same caps and warning handling, one sign-in per site, and one connector shape.
+- The connector contract (`jobs.search@1` and friends) does not change: a Handyman compartment satisfies it through a thin adapter, so API and browser sources look the same to the engine.
 
-**Durability details.**
-
-- **Cookie encryption.** Ask Chromium to encrypt cookies with the OS keychain where one exists. Playwright's default launch flags select a mock keychain on macOS and a basic password store on Linux. The LinkedIn spike verifies this and records the flags used.
-- **Clean shutdown.** Always close contexts cleanly, so cookies reach the disk.
-- **After an upgrade.** Re-probe every session after a Playwright or Chromium upgrade.
-- **Sites that refuse headless.** Let a site's manifest set `requiresHeaded`, which runs it in a headed window instead. Never mask automation.
+**Consequence.** Scheduled unattended runs that need a browser site require Handyman to be running (open or in the background). When it is not, job-seeker skips the browser sources with a clear report entry and runs its API sources anyway (section 7.7).
 
 ### 12.4 Ranking
 
@@ -649,18 +639,18 @@ Notifications use `osascript` on macOS (later `notify-send` on Linux and a Power
 | Run reports | 180 days, and the last 50 always | |
 | Resumes, profile versions, criteria changes, approvals, LinkedIn profile edits, research runs | Kept until the user deletes them | |
 | `ai_calls` | 180 days; the ones a kept record cites are kept with it | |
-| Page captures | 14 days | 200 MB |
-| Browser profiles | Indefinitely. Weekly maintenance clears Chromium's caches (HTTP cache, code cache, GPU cache, service-worker cache) but never cookies or site storage | Warn at 1 GB per profile |
 | Whole data directory | | Warn at 2 GB. `job-seeker gc` prunes on demand, and the weekly maintenance run prunes and vacuums |
 
-**Why.** Dedupe needs a permanent identity, which is cheap. Bulk text is what grows. At 50 jobs a day, descriptions add about 0.5 MB a day, so 180 days stays under 100 MB. Clearing only caches keeps sign-ins intact.
+Browser profiles, page captures and their limits are Handyman's, in Handyman's own data directory.
+
+**Why.** Dedupe needs a permanent identity, which is cheap. Bulk text is what grows. At 50 jobs a day, descriptions add about 0.5 MB a day, so 180 days stays under 100 MB.
 
 ### 12.6 Install
 
 1. `npm install -g` the job-seeker package. Node.js 22 or later is the only prerequisite.
 2. `job-seeker setup`, which is idempotent and asks before each step:
    - creates the data directory and `config.json`, and refuses one inside a git work tree;
-   - downloads Playwright's pinned Chromium build;
+   - checks that Handyman is installed and its endpoint is reachable, and reports the compartments it serves; browser sources are skipped until it is (section 7.7);
    - downloads the pinned Tectonic build and checks its checksum;
    - installs and starts the LaunchAgent;
    - adds the `job-seeker mcp` server to Claude Desktop's configuration and to Codex's, showing the change and keeping a backup of each file;
@@ -711,5 +701,6 @@ run({ purpose, instructions, trusted, untrusted, outputSchema }) -> { output, me
 - Scheduled LinkedIn people search.
 - WhatsApp in v1.
 - A network MCP transport, for now.
+- A browser host of job-seeker's own: every site that needs a browser is a Handyman compartment (section 7).
 - Solving or bypassing CAPTCHAs and security checks, or masking automation.
 - The Command Center integration itself. Section 4 only keeps it possible.
