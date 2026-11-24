@@ -1,0 +1,9 @@
+date,company,sector,role,role_type,channel,status,contact_person,fit_rating,notes,cv_file,cover_letter_file,source,deadline
+2026-10-21,Acme Analytics,Analytics,"Director, AI Strategy",permanent,online,applied,,,,,,https://acme.example/jobs/101,2026-12-15
+2026-10-22,Iota Energy,Energy,Director of AI Strategy,permanent,online,prospect,,,,,,https://iota.example/jobs/12,
+2026-10-08,Kappa Finance,Finance,Head of AI,permanent,online,interview,,,,,,https://kappa.example/careers/7,
+2026-09-20,Lambda Insurance,Insurance,"VP, AI Transformation",permanent,online,rejected,,,,,,indeed,
+2026-10-24,Beta Health,Health,"VP, AI Transformation",permanent,referral,drafted,,,,,,https://beta.example/careers/202,
+2026-09-12,Mu Consulting,Consulting,Director AI Advisory,permanent,online,withdrawn,,,,,,linkedin,
+2026-10-28,Nu Corp,Technology,VP AI Strategy,permanent,online,mystery,,,<b>Status typed by hand</b>,,,,
+2026-10-15,Xi Group,Media,Director of AI Transformation,permanent,portal,applied,,,,,,https://xi.example/jobs/55,

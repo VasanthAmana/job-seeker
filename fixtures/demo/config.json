@@ -1,0 +1,20 @@
+{
+  "_comment": "Fictional demo settings for `job-seeker demo init` and the phase 1 acceptance tests. Not a real user's config.",
+  "ranking": {
+    "weights": { "domain": 0.3, "leadership": 0.25, "behavioral": 0.15, "career": 0.3 },
+    "top_n": 5,
+    "candidate_limit": 10,
+    "rules": {
+      "titles": ["AI Strategy", "AI Transformation", "Head of AI"],
+      "keywords": ["AI strategy", "roadmap", "transformation", "governance", "operating model", "executive"],
+      "domains": ["enterprise", "analytics"],
+      "seniority": ["director", "vp"],
+      "exclude": ["engineer"],
+      "locations": ["Denver, CO", "Remote (US)"],
+      "salary_min": 150000,
+      "weights": { "title": 0.3, "skills": 0.25, "domain": 0.15, "seniority": 0.15, "location": 0.15 }
+    }
+  },
+  "ai": { "backend": "off" },
+  "secrets": { "backend": "auto" }
+}

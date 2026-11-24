@@ -4,6 +4,8 @@
 
 # Application tracking and per-application archives
 tracker.csv
+# ...except the fictional demo tracker shipped with the package
+!fixtures/demo/legacy/tracker.csv
 applications/**
 !applications/.gitkeep
 
@@ -34,8 +36,10 @@ profile/job-evaluation.md
 profile/writing-style.md
 
 # Real jobseek config: Gmail account folder paths, output locations, etc.
-# Commit only config.example.json (placeholder values).
+# Commit only config.example.json (placeholder values) and the fictional
+# demo config shipped with the package.
 config.json
+!fixtures/demo/config.json
 
 # Company research cache (personal search history)
 company_research/
