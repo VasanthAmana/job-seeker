@@ -34,3 +34,44 @@ jobs:
       # out of CI.
       - name: tailor + dashboard tests
         run: python -m pytest tailor/tests dashboard/tests -q
+
+  node:
+    # The TypeScript engine (execution plan section 5, phase 0), on every
+    # platform the release runs on.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm run build
+
+      # Runs the Vitest suites including the MCP acceptance scenarios
+      # (AT-0.1, AT-0.2), which spawn the built `job-seeker mcp` over stdio.
+      - run: npm test
+
+  scans:
+    # Public-repository guards (execution plan section 2, rule 3): fixtures
+    # stay fictional and no credential reaches the index.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fixture-hygiene scan
+        run: python3 scripts/ci/fixture_hygiene.py
+
+      - name: Secret scan
+        run: python3 scripts/ci/secret_scan.py

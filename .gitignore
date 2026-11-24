@@ -56,6 +56,11 @@ __pycache__/
 .venv/
 venv/
 
+# Node (the TypeScript engine)
+node_modules/
+dist/
+coverage/
+
 # OS / editor
 .DS_Store
 Thumbs.db
