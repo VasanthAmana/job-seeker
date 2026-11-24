@@ -29,18 +29,17 @@ FICTIONAL_DOMAIN = re.compile(
 # address never belongs here.
 ALLOWED_ADDRESSES = {
     "jobs-noreply@linkedin.com",
-    "jobalerts-noreply@linkedin.com",
-    "messages-noreply@linkedin.com",
     "alert@indeed.com",
-    "noreply@indeed.com",
     "alerts@theladders.com",
-    "noreply@theladders.com",
 }
 
-EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+EMAIL = re.compile(
+    r"[\w.+-]+@[\w-]+(?:\.[\w-]+)*"
+    r"\.(?!(?:png|jpe?g|gif|svg|webp|avif|ico)\b)[A-Za-z]{2,}\b"
+)
 
 HOME_PATH = re.compile(
-    r"(?:/Users/|[A-Za-z]:\\\\Users\\\\|/home/)(?P<user>[A-Za-z0-9._-]+)"
+    r"(?:/Users/|[A-Za-z]:\\{1,2}Users\\{1,2}|/home/)(?P<user>[A-Za-z0-9._-]+)"
 )
 # Placeholder accounts that are fine in fixtures.
 ALLOWED_HOME_USERS = {"user", "runner", "example", "demo", "test", "you", "your-username"}

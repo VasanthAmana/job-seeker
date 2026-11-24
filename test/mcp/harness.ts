@@ -8,11 +8,9 @@
  * `JOB_SEEKER_HOME` at a fresh temporary directory so a scenario never
  * touches the user's data.
  *
- * Later phases slot their fakes in through {@link HarnessOptions}:
- * the fake clock, the `fake` AI adapter backend, the fake notifier, the fake
- * Handyman endpoint and the scripted Handyman, plus running the service in
- * the loop (`job-seeker service --foreground`). Phase 0 needs none of them,
- * so the option is declared and reserved, not implemented.
+ * Later phases add their fakes (fake clock, fake AI adapter, fake notifier,
+ * fake Handyman endpoint, scripted Handyman, service-in-the-loop) to
+ * {@link HarnessOptions} when they introduce them.
  */
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -41,11 +39,6 @@ export const PLAIN_CLIENT: ClientProfile = { elicitation: false };
 
 export interface HarnessOptions {
   profile?: ClientProfile;
-  /**
-   * Reserved for later phases: fake clock, fake AI adapter, fake notifier,
-   * fake Handyman endpoint, scripted Handyman, service-in-the-loop.
-   */
-  fakes?: Record<string, never>;
 }
 
 export interface McpHarness {

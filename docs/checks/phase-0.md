@@ -1,7 +1,8 @@
 # Phase 0 client check
 
 - **Acceptance scenarios covered:** AT-0.1 (handshake, `tools/list`,
-  `status`) and AT-0.2 (protocol error paths) - both passed in CI.
+  `status`) and AT-0.2 (protocol error paths) - pending a green CI run;
+  record the run here once it passes.
 - **Real-account manual checks:** none - fictional data only. This check
   touches no account; it only proves both real clients can launch the stub
   server and call `status`.

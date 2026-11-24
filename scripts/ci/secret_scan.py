@@ -15,7 +15,7 @@ import re
 import subprocess
 import sys
 
-PATTERNS = [
+TOKEN_PATTERNS = [
     ("private key block", re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----")),
     ("AWS access key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
     ("GitHub token", re.compile(r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b")),
@@ -25,23 +25,20 @@ PATTERNS = [
     ("Anthropic API key", re.compile(r"\bsk-ant-[A-Za-z0-9_-]{20,}\b")),
     ("OpenAI API key", re.compile(r"\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b")),
     ("Google API key", re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b")),
-    (
-        "secret-sounding assignment",
-        re.compile(
-            r"(?i)\b(?:api[_-]?key|secret|password|passwd|access[_-]?token|"
-            r"refresh[_-]?token|client[_-]?secret)[\"']?\s*[:=]\s*"
-            r"[\"'][A-Za-z0-9_/+.\-]{16,}[\"']"
-        ),
-    ),
 ]
 
-# Lines where a match is documentation, not a credential.
-ALLOW_SUBSTRINGS = (
+SECRET_ASSIGNMENT = re.compile(
+    r"(?i)\b(?:api[_-]?key|secret|password|passwd|access[_-]?token|"
+    r"refresh[_-]?token|client[_-]?secret)[\"']?\s*[:=]\s*"
+    r"[\"'](?P<value>[A-Za-z0-9_/+.\-]{16,})[\"']"
+)
+
+# Assigned values that are documentation, not a credential.
+PLACEHOLDER_VALUES = (
     "example",
     "placeholder",
     "your-",
     "xxxx",
-    "<",
 )
 
 
@@ -60,12 +57,13 @@ def main() -> int:
         except (UnicodeDecodeError, ValueError):
             continue  # binary file; token shapes are ASCII text
         for lineno, line in enumerate(lines, start=1):
-            lowered = line.lower()
-            for name, pattern in PATTERNS:
-                if pattern.search(line) and not any(
-                    allow in lowered for allow in ALLOW_SUBSTRINGS
-                ):
+            for name, pattern in TOKEN_PATTERNS:
+                if pattern.search(line):
                     findings.append(f"{path}:{lineno}: {name}")
+            for match in SECRET_ASSIGNMENT.finditer(line):
+                value = match.group("value").lower()
+                if not any(marker in value for marker in PLACEHOLDER_VALUES):
+                    findings.append(f"{path}:{lineno}: secret-sounding assignment")
     if findings:
         print("secret scan failed:", file=sys.stderr)
         for finding in findings:
