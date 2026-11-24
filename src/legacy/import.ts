@@ -31,6 +31,9 @@ import { auditSeen } from "../core/dedupe/jobKey.js";
 import { canonicalizeUrl } from "../core/dedupe/urlCanon.js";
 import { addSighting, findExisting, insertJob, scoreJobByRules } from "../core/jobs.js";
 
+/** Marks an imported event whose tracker date was not a full day; its `at` is the import time. */
+export const LEGACY_DATE_NOTE = "legacy date: ";
+
 export class LegacyStateError extends EngineError {
   override name = "LegacyStateError";
   constructor(message: string) {
@@ -311,7 +314,7 @@ function importTracker(ctx: CoreContext, rows: Array<Record<string, string>>) {
     const noteParts = [
       str(row.notes),
       mapped && rawStatus.toLowerCase() === mapped ? null : `legacy status: ${rawStatus || "(blank)"}`,
-      date && !fullDate ? `legacy date: ${date}` : null,
+      date && !fullDate ? `${LEGACY_DATE_NOTE}${date}` : null,
     ];
     setApplicationState(ctx, job.id, mapped ?? "found", {
       reported_by: "import",

@@ -22,7 +22,8 @@ const read = (path: string) => decodePage(readFileSync(`${ROOT}${path}`));
 
 function python(): string | null {
   for (const candidate of ["python3", "python"]) {
-    const probe = spawnSync(candidate, ["-c", "import sys; print(sys.version_info >= (3, 10))"], { encoding: "utf8" });
+    // The Python originals lock state with fcntl, so they only import on POSIX.
+    const probe = spawnSync(candidate, ["-c", "import sys, fcntl; print(sys.version_info >= (3, 10))"], { encoding: "utf8" });
     if (probe.status === 0 && probe.stdout.trim() === "True") return candidate;
   }
   return null;
