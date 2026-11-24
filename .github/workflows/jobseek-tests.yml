@@ -36,7 +36,7 @@ jobs:
         run: python -m pytest tailor/tests dashboard/tests -q
 
   node:
-    # The TypeScript engine (execution plan section 5, phase 0), on every
+    # The TypeScript engine (execution plan sections 5 and 6), on every
     # platform the release runs on.
     strategy:
       fail-fast: false
@@ -51,6 +51,12 @@ jobs:
           node-version: 22
           cache: npm
 
+      # The port-parity suite (execution plan section 4.1) runs the Python
+      # originals next to their TypeScript ports.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - run: npm ci
 
       - run: npm run lint
@@ -59,8 +65,10 @@ jobs:
 
       - run: npm run build
 
-      # Runs the Vitest suites including the MCP acceptance scenarios
-      # (AT-0.1, AT-0.2), which spawn the built `job-seeker mcp` over stdio.
+      # Runs the Vitest suites: the ported unit specs, the Python parity
+      # check, and the MCP acceptance scenarios (AT-0.x, AT-1.x), which spawn
+      # the built `job-seeker mcp` over stdio against temporary data
+      # directories and fictional fixtures.
       - run: npm test
 
   scans:
