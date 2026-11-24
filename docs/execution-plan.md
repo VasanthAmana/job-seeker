@@ -9,7 +9,7 @@
 ```mermaid
 flowchart LR
   P0["0 Toolchain and<br/>MCP harness"] --> P1["1 Engine core, storage,<br/>Engine API, MCP server"]
-  P1 --> P2["2 Background service,<br/>runs, connector and<br/>browser hosts"]
+  P1 --> P2["2 Background service,<br/>runs, connector host<br/>and Handyman client"]
   P2 --> P3["3 AI adapter<br/>and approvals"]
   P3 --> P4["4 End to end<br/>through MCP"]
   P4 --> P5["5 LinkedIn<br/>connector"]
@@ -27,12 +27,12 @@ flowchart LR
 |---|---|---|---|---|
 | 0 | TypeScript toolchain, CI, MCP test harness, stub server | The harness connects and calls `status` | None | v0.0.1 |
 | 1 | Engine core, storage, Engine API, MCP server, pipeline page, setup (first cut) | Jobs, ranking, applications and the pipeline page over imported legacy fixtures | MC-1.1 legacy import of the real state | v0.1.0 |
-| 2 | Background service, runs, scheduler, connector host, browser host, sessions, human steps | A run goes through the service and through the in-process fallback; a browser human step pauses, opens a window and resumes headless | MC-2.1 LaunchAgent opens a window (demo site) | v0.2.0 |
+| 2 | Background service, runs, scheduler, connector host, Handyman client, human steps | A run goes through the service and through the in-process fallback; a compartment's needs-human report pauses the step, notifies and resumes once cleared; a run without Handyman skips browser sources and says so | MC-2.1 LaunchAgent runs a schedule; browser sources skip cleanly with Handyman stopped | v0.2.0 |
 | 3 | AI adapter, approvals, criteria | Adapter call sites and their checks; approval by chat, elicitation and CLI | MC-3.1 adapter on the user's own CLIs | v0.3.0 |
 | 4 | End-to-end flow, client matrix, demo mode | One scripted session covering every basic component | MC-4.1 demo flow in Claude Desktop and Codex | v0.4.0 |
-| 5 | `linkedin` connector, read side | Sign-in, search, details, own profile, alerts, budget, challenge hand-off | MC-5.1 to 5.5 on the main account | v0.5.0 |
+| 5 | `linkedin` connector over Handyman's compartment, read side | Search, details, own profile, alerts, budget, challenge hand-off through the compartment | MC-5.1 to 5.5 on the main account | v0.5.0 |
 | 6 | Profile intake from LinkedIn, criteria from the profile, search | Profile to claims to criteria to ranked LinkedIn jobs | MC-6.1, 6.2 | v0.6.0 |
-| 7 | LinkedIn profile edits | Diff, grounding, approval, headed apply, verify; every refusal path | MC-7.1, 7.2 one reversible edit | v0.7.0 |
+| 7 | LinkedIn profile edits | Diff, grounding, approval, apply through the compartment, verify; every refusal path | MC-7.1, 7.2 one reversible edit | v0.7.0 |
 | 8 | Gmail and alert connectors, `web-posting`, issues 1 to 5, Notion, profile expansion | Alerts merged with LinkedIn sightings; each connector's kit | MC-8.x per connector | v0.8.0 |
 | 9 | Research, synthesis, criteria proposals | Evidence-backed findings, proposals through approvals | MC-9.1 | v0.9.0 |
 | 10 | Resumes, templates, Tectonic, .docx, "why me" note | Grounded resume in every template; fabricated items refused | MC-10.1 | v0.10.0 |
@@ -66,8 +66,8 @@ Built in phase 0 and used by every later phase.
   - The `fake` AI adapter backend, with canned outputs per scenario.
   - A fake notifier that writes notifications to a file the test reads.
   - Recorded HTTP replays for API connectors.
-  - For browser connectors, Playwright request routing serves fictional fixture pages for the connector's real origins, so origin pinning is tested unchanged and nothing leaves the machine.
-  - A scripted "human" that acts in the headed window during a human step (a test-only hook, absent from the published package).
+  - For browser connectors, a **fake Handyman endpoint**: a local socket server speaking the compartment protocol (the same fake `linkedin/client.py`'s tests already run against), serving recorded fixture responses, so nothing leaves the machine.
+  - A scripted Handyman that flips a fake compartment between healthy and needs-human during a human step (a test-only fake, absent from the published package).
 - **Service in the loop.** Scenarios run the service as a child process (`job-seeker service --foreground`) and also with it stopped, so both the hand-off and the in-process fallback are covered.
 - **Demo mode.** `job-seeker demo init` creates a separate data directory with fictional data and the fixture connectors, so a person can repeat a scenario by hand in a real client without touching a real account.
 - **Client check.** At the end of each phase, the phase's scenario is repeated by hand in Claude Desktop and in Codex against demo mode, using plain requests. The checklist lives in `docs/checks/phase-<n>.md`. Client differences, such as elicitation support, are recorded in `docs/decisions/mcp-clients.md`.
@@ -88,14 +88,14 @@ The predecessor's `run alerts` workflow, its Python MCP server and its JSON stat
 | When | Still on the predecessor | Already on the new engine |
 |---|---|---|
 | Phase 4 ships | Everything | Nothing (demo data only) |
-| Phase 5 ships | `run alerts` with both its LinkedIn and Gmail ingest, ranking, the top-5 shortlist, Notion, tailor, upskill, expand, and the Python MCP server with all its tools, including its three LinkedIn tools. The predecessor's LinkedIn ingest still runs through `linkedin/client.py`, `linkedin/source.py` and the Electron app, which therefore stays installed | The new LinkedIn MCP tools (search, details, own profile, alerts), side by side with the predecessor's. The predecessor's shortlist stays the single shortlist: it ranks LinkedIn and Gmail jobs together |
-| Phase 8 ships | Tailor and upskill, on the Python MCP server trimmed to `tailor` and `upskill_report` | Profile, criteria, search, LinkedIn and Gmail alerts, ranking, the shortlist, applications, Notion. **Cutover:** `run alerts` (both halves), the posting-scorer agent, the Electron app, `linkedin/client.py`, `linkedin/source.py` and every other Python server tool are removed in the same release, and the new engine's shortlist becomes the single shortlist |
+| Phase 5 ships | `run alerts` with both its LinkedIn and Gmail ingest, ranking, the top-5 shortlist, Notion, tailor, upskill, expand, and the Python MCP server with all its tools, including its three LinkedIn tools. The predecessor's LinkedIn ingest still runs through `linkedin/client.py`, `linkedin/source.py` and the vendored LinkedIn app at its own endpoint, which therefore stays installed | The new LinkedIn MCP tools (search, details, own profile, alerts), side by side with the predecessor's. The predecessor's shortlist stays the single shortlist: it ranks LinkedIn and Gmail jobs together |
+| Phase 8 ships | Tailor and upskill, on the Python MCP server trimmed to `tailor` and `upskill_report` | Profile, criteria, search, LinkedIn and Gmail alerts, ranking, the shortlist, applications, Notion. **Cutover:** `run alerts` (both halves), the posting-scorer agent, the vendored LinkedIn app copy (the compartment is Handyman's), `linkedin/client.py`, `linkedin/source.py` and every other Python server tool are removed in the same release, and the new engine's shortlist becomes the single shortlist |
 | Phase 9 ships | Tailor, on the Python MCP server trimmed to `tailor` | Research, replacing `upskill_report` |
 | Phase 10 ships | Nothing. The Python MCP server is removed | Everything |
 
 Phases 9 and 10 can ship in either order: the Python MCP server keeps whichever of `tailor` and `upskill_report` is not yet replaced, and it is removed with the second of the two. After the phase 8 cutover its tools read the predecessor's state as it stood at the cutover; for a job found later, the user runs `/tailor` with the URL from `job_get`.
 
-From phase 5 to phase 8 the Electron app and the new connector use the same LinkedIn account with separate pacers, so the user keeps their combined page views under the daily cap of 200, by setting a lower cap on the new connector or running it by hand only.
+From phase 5 to phase 8 the predecessor's ingest and the new connector use the same LinkedIn account through two endpoints with separate pacers: `linkedin/client.py` still resolves the vendored `linkedin-mcp` app's socket, while the new connector calls Handyman's endpoint (`<handyman data folder>/endpoint/handyman.sock`). So the user keeps their combined page views under the daily cap of 200, by setting a lower cap on the new connector or running it by hand only. Switching `linkedin/client.py` to Handyman's endpoint is what removes this mitigation: from then on one compartment's pacer and caps cover both sides.
 
 `job-seeker import-legacy` can be run again until phase 8; it merges newly seen jobs and tracker rows and skips what it already imported.
 
@@ -113,9 +113,9 @@ Test counts are the test functions in each suite today; parametrised cases add m
 | `dashboard/build.py` | `dashboard/tests` (9) | 1 | the pipeline page | 8 |
 | `mcp/server.py` | `test_mcp_server` (11) | 0 and 1 | protocol error paths of the TypeScript server | trimmed in 8 and 9, removed once 9 and 10 have both shipped |
 | `mcp/tools.py` | `test_mcp_tools` (38) | 1 to 10, per tool (section 4.4) | the new MCP tools | per tool: all but `tailor` and `upskill_report` in 8, `upskill_report` in 9, `tailor` in 10 |
-| `linkedin/app/src/pacing.js`, `cache.js`, `capture.js` | `pacing`, `cache_format`, `capture` (19) | 2 | the browser host's pacer, cache and captures | 8 |
-| `linkedin/app/src/extractors.js`, `urls.js`, `format.js`, `tools.js` | `extractors`, `tools`, `server` (28) | 5 | the `linkedin` connector | 8 |
-| `linkedin/client.py`, `linkedin/source.py` | `test_linkedin_client` (15), `test_linkedin_source` (10) | 5 | criteria mapping in the connector | 8 |
+| `linkedin/app/src/pacing.js`, `cache.js`, `capture.js` | `pacing`, `cache_format`, `capture` (19) | — | Handyman's LinkedIn compartment; pacing, cache and captures stay there | 8 (the vendored copy leaves this repository) |
+| `linkedin/app/src/extractors.js`, `urls.js`, `format.js`, `tools.js` | `extractors`, `tools`, `server` (28) | — | Handyman's LinkedIn compartment; the `linkedin` connector here is a thin adapter over it | 8 (the vendored copy leaves this repository) |
+| `linkedin/client.py`, `linkedin/source.py` | `test_linkedin_client` (15), `test_linkedin_source` (10) | 5 | the engine's Handyman client and the `linkedin` connector's criteria mapping | 8 |
 | `expand/tools/read_source.py`, `profile_sources.py`, `linkedin_source.py`, `competency_map.py` | their `expand/tests` suites (27 plus the relevant `test_expand_run` cases) | 6 | profile sources and intake | 8 |
 | `tailor/tools/grounding_audit.py` | `test_grounding_audit` (13) | 7 | `core/grounding`, shared by profile edits and resumes | 10 |
 | `tools/gmail_alerts.py`, `sources/registry.py`, `alert-sources.json` | `test_gmail_alerts` (10), `test_source_registry` (8) | 8 | `gmail` and the four alert connectors | 8 |
@@ -172,7 +172,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 
 - **Storage.**
   - Decide between `node:sqlite` and `better-sqlite3` by checking WAL, `VACUUM INTO`, and install on all three CI platforms; record it in `docs/decisions/storage-driver.md`.
-  - The migration runner and the first migration with every table the basic components need (design 5.2): settings, events, profile sources and versions, criteria, approvals, jobs, sightings, features, scores, applications, runs, steps, schedules, human steps, bindings, browser sessions and `ai_calls`.
+  - The migration runner and the first migration with every table the basic components need (design 5.2): settings, events, profile sources and versions, criteria, approvals, jobs, sightings, features, scores, applications, runs, steps, schedules, human steps, bindings and `ai_calls`.
   - A backup before each migration, refusal of a newer database, and refusal of a data directory inside a git work tree.
 - **Engine API v1.** The operation table, its JSON Schemas, the generated TypeScript types and the events feed.
 - **Engine core** (ported, section 4.3): dedupe, the posting guard, ranking, jobs ingest, settings, applications and their states, and the profile core (sources, versions and quote validation for pasted text and user statements).
@@ -198,38 +198,39 @@ Test counts are the test functions in each suite today; parametrised cases add m
 
 **Manual steps for the user.** Run `setup`; allow it to edit the two clients' configuration files; restart Claude Desktop.
 
-## 7. Phase 2: background service, runs, connector host and browser host
+## 7. Phase 2: background service, runs, connector host and Handyman client
 
-**Goal.** Work runs in the background in the user's session. A browser run that needs a person pauses, tells the user, opens a window, and carries on headless when the person is done.
+**Goal.** Work runs in the background in the user's session. A browser step that needs a person pauses, tells the user, and carries on when the person has cleared it in Handyman. A run whose browser sources are unreachable skips them cleanly and runs the rest.
 
 **Scope.**
 
 - **Runs.** Run and step records, leases, heartbeats, step cursors, the queue and the wake file, and the in-process fallback when the service's heartbeat is stale (design 3).
 - **Service.** `job-seeker service` with the scheduler: interval, cron and manual schedules, jitter, one catch-up after sleep or log-out, one active run per schedule. `setup` installs, starts and checks the LaunchAgent; `job-seeker service install|uninstall|status`.
-- **Notifications** through `osascript`, and the human-steps lifecycle (design 7.3).
+- **Notifications** through `osascript`, and the human-steps lifecycle (design 7.3 and 7.4).
 - **Reports, basic.** `report@1` JSON and HTML for every run, and `latest.html`.
 - **Connector host.** The manifest schema and its validation, the registry, the contracts' schemas, the connector context, scoped HTTP, and the connector kit (`job-seeker connector test`).
-- **Browser host.** Playwright persistent contexts, the guards, the pacer (ported, with page loads counted in the database and a daily cap), the cache, captures, challenge detection, and headless-to-headed switching on one profile. Session states and `session_open`, `session_done` and `sessions_list`. `setup` downloads the browser with the user's consent.
-- **Fixture connectors** for tests and demo mode only: `fixture-jobs` (API, recorded replies) and `fixture-site` (browser, with a login wall and a challenge page).
-- **MCP tools.** `search_run` (on any registered connector, with an unsaved criteria body until phase 3 adds approvals), `run_status`, `schedules_list`, `schedule_set`, `schedule_delete`, `reports_list`, `report_get`, `connectors_list`, `connector_configure`, and the session tools.
+- **Handyman client** (design 7.2): endpoint resolution (0600 socket or named pipe, with the test override), the newline-delimited JSON-RPC client, and specific, actionable errors for "Handyman isn't running", "compartment missing" and every needs-human report. `setup --check` probes the endpoint and lists the compartments it serves.
+- **Browser steps** (design 7.3 and 7.7): a step on a browser connector probes the endpoint first, runs through the compartment, pauses as `waiting_for_human` on a needs-human report, and is skipped with reason `handyman_unreachable` when the endpoint is down, or `compartment_missing` when Handyman does not serve that site - the run continues with its API sources and finishes `partial`, and the report names the skipped sources.
+- **Fixture connectors** for tests and demo mode only: `fixture-jobs` (API, recorded replies) and `fixture-site` (browser, a fake Handyman endpoint whose compartment can be flipped between healthy, signed-out and challenge).
+- **MCP tools.** `search_run` (on any registered connector, with an unsaved criteria body until phase 3 adds approvals), `run_status`, `schedules_list`, `schedule_set`, `schedule_delete`, `reports_list`, `report_get`, `connectors_list`, `connector_configure` and `human_steps_list`.
 
 **MCP acceptance.**
 
 - **AT-2.1** With the service running, `search_run` on `fixture-jobs` returns a queued run; the service executes it; `run_status` reports success; `jobs_list` shows the jobs with their source; a report exists.
 - **AT-2.2** With the service stopped, the same call runs in-process. When the service starts mid-run, the lease stops it from running the same run twice.
-- **AT-2.3** A `fixture-site` search meets the challenge page. The run becomes `waiting_for_human`; `human_steps_list` shows the step; the fake notifier received one notification; a headed context was launched on the same profile directory. The scripted human clears the challenge; the probe passes; the run resumes headless from its cursor and succeeds. The guard log shows no input into credential fields.
-- **AT-2.4** With the fake clock, the 201st page load of a day and the 41st of an hour are refused; the remaining work is deferred and `run_status` says so. The count is shared between the service and an in-process run.
+- **AT-2.3** A `fixture-site` search meets a challenge report from the fake compartment. The run becomes `waiting_for_human`; `human_steps_list` shows the step; the fake notifier received one notification naming Handyman as the place to clear it. The scripted Handyman flips the compartment back to healthy within the wait limit; the same run resumes from its cursor and succeeds. No retry went to the compartment while it reported needs-human.
+- **AT-2.4** With the fake clock, the planner defers the work that does not fit the day's budget (design 7.5) and `run_status` says so. The budget is shared between the service and an in-process run.
 - **AT-2.5** `schedule_set` creates an interval schedule; advancing the clock fires one run; a simulated sleep across three slots fires one catch-up run.
-- **AT-2.6** The guards refuse input into a password field, block an off-origin navigation and refuse a cookie export.
-- **AT-2.7** A step left waiting past its limit ends as `needs_human`; the run is `partial`; the next run skips the connector without loading a page.
+- **AT-2.6** With the fake endpoint stopped (Handyman not running), a run that targets `fixture-site` skips that step with reason `handyman_unreachable`, runs its API steps, finishes `partial`, and the report and `status` name the skipped source and the remedy. A run started from MCP answers immediately that Handyman is not running.
+- **AT-2.7** With the fake clock, a step left waiting past its wait limit (10 minutes for an MCP- or CLI-started run; 12 hours or the schedule's next run for a scheduled one) ends as `needs_human`; the run is `partial`; the next run skips the connector without calling the compartment while it reports needs-human, and resumes the step from its cursor once it reports healthy.
 
-**Client check.** In demo mode, ask Claude Desktop and Codex to run a search on the fixture site; the window opens, the user clears the demo challenge, and the assistant reports the results.
+**Client check.** In demo mode, ask Claude Desktop and Codex to run a search on the fixture site; when the demo compartment reports a challenge, the assistant explains that it is waiting and says to clear it in Handyman; once cleared, the assistant reports the results.
 
-**Real-account manual check.** **MC-2.1** (no real site) On the user's Mac: `setup` installs the LaunchAgent; after a reboot the service is running; a demo schedule fires; a demo human step opens a visible window **from the service**, not from a terminal. This proves design 7.1's "where windows come from".
+**Real-account manual check.** **MC-2.1** On the user's Mac: `setup` installs the LaunchAgent; after a reboot the service is running; a demo schedule fires. With Handyman stopped, a demo run that includes a browser source skips it, finishes `partial`, and the report and `status` name the skipped source and say to start Handyman; with Handyman running, the same run reaches the compartment. This proves design 7.7's unattended behaviour on the real machine.
 
-**Manual steps for the user.** Allow job-seeker under macOS's "Background items added" prompt; allow notifications; consent to the browser download.
+**Manual steps for the user.** Allow job-seeker under macOS's "Background items added" prompt; allow notifications; install and start Handyman.
 
-**Risks.** A LaunchAgent that is not limited to the graphical session cannot open windows; MC-2.1 checks it on the real machine.
+**Risks.** The skipped-source path is the one users will see whenever Handyman is not running; AT-2.6 and MC-2.1 pin its wording and behaviour.
 
 ## 8. Phase 3: AI adapter and approvals
 
@@ -270,7 +271,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
   1. `status` on a fresh setup;
   2. `profile_import_source` (fictional text), `profile_intake_run`, `profile_save_version`;
   3. `criteria_propose`, then `approval_decide`;
-  4. `search_run` over `fixture-jobs` and `fixture-site`, handed to the service, with a challenge in the middle that the scripted human clears;
+  4. `search_run` over `fixture-jobs` and `fixture-site`, handed to the service, with a challenge in the middle that the scripted Handyman clears;
   5. `jobs_list` with sources and scores, then `match_review_run`;
   6. `application_set_state` to `shortlisted`, then `pipeline_page`;
   7. `schedule_set`; the service fires the schedule with **no MCP client connected**; then a new MCP session reads the report and `status`.
@@ -286,45 +287,44 @@ Test counts are the test functions in each suite today; parametrised cases add m
 
 ## 10. Phase 5: the LinkedIn connector
 
-**Goal.** From their assistant, the user signs in to LinkedIn once and then searches jobs, reads details, reads their own profile and reads their alerts, within 200 page views a day.
+**Goal.** From their assistant, and with LinkedIn signed in once in Handyman's compartment, the user searches jobs, reads details, reads their own profile and reads their alerts, within 200 page views a day.
 
 **Scope.**
 
 - **Spike first.** One week on the user's main account, by hand and under the cap, written up as `docs/decisions/linkedin-spike.md`:
-  - alternate headless runs and headed windows on one profile at normal pace, and record every challenge and sign-out;
-  - record the cookie-encryption launch flags on macOS and confirm the profile lock's behaviour;
+  - exercise every compartment action the adapter maps (search, details, recommended, own profile, alerts), and record the compartment's status, counters and needs-human reports;
   - record the structure of the recommended-jobs collection, the own-profile page and the profile edit forms (headline, About, experience, skills), **without saving any edit**;
   - check LinkedIn's current field length limits.
 
-  Captures stay in the data directory. Fixtures are rebuilt from them with fictional content, and the redaction is reviewed before any commit.
-- **Connector** (`connectors/linkedin/`), ported to TypeScript from the vendored app: extractors, URL builders, formatting and the "LinkedIn needs you" detection. Actions `search_jobs`, `get_job`, `recommended_jobs`, `read_own_profile` and `search_people` (`manualOnly`), and the `alerts` sync. The `tos_risk` acceptance when the binding is created.
-- **Budget planner** with the daily cap of 200, the hourly cap of 40 and the priority order (design 7.4).
-- **MCP tools.** `session_open` for LinkedIn, `search_run` and `alerts_ingest` on `linkedin`, `job_get` with a detail fetch, `profile_read_linkedin`, `linkedin_search_people`.
-- **Retired:** nothing. The new LinkedIn tools ship alongside the predecessor's LinkedIn ingest: `run alerts` keeps its LinkedIn half, the Python server keeps its LinkedIn tools, and the Electron app they depend on stays, until the phase 8 cutover (section 4.2), so the predecessor's shortlist stays the single, merged one.
+  Recorded exchanges stay in the data directory. Fixtures are rebuilt from them with fictional content, and the redaction is reviewed before any commit.
+- **Connector** (`connectors/linkedin/`): a thin TypeScript adapter over Handyman's LinkedIn compartment (design 7.5), with the criteria mapping ported from `linkedin/source.py`. Actions `search_jobs`, `get_job`, `recommended_jobs`, `read_own_profile` and `search_people` (`manualOnly`), and the `alerts` sync. The `tos_risk` acceptance when the binding is created.
+- **Budget planner** with the daily cap of 200, the hourly cap of 40 and the priority order (design 7.5). job-seeker plans within the budget; Handyman's compartment enforces the caps and its counters are what the report shows.
+- **MCP tools.** `search_run` and `alerts_ingest` on `linkedin`, `job_get` with a detail fetch, `profile_read_linkedin`, `linkedin_search_people`. `connectors_list` shows the compartment's reachability, sign-in state and counters as Handyman reports them.
+- **Retired:** nothing. The new LinkedIn tools ship alongside the predecessor's LinkedIn ingest: `run alerts` keeps its LinkedIn half, the Python server keeps its LinkedIn tools, and the vendored LinkedIn app they depend on stays, until the phase 8 cutover (section 4.2), so the predecessor's shortlist stays the single, merged one.
 
-**MCP acceptance** (fictional LinkedIn pages served by request routing).
+**MCP acceptance** (a fake Handyman endpoint serving fictional LinkedIn fixtures).
 
-- **AT-5.1** `session_open` shows the login fixture in a headed context; the scripted human signs in; the session becomes `signed_in`. No input reached a credential field.
-- **AT-5.2** `search_run` with a criteria body builds the golden search URL, extracts the results, and merges them with a fixture alert sighting of the same job.
+- **AT-5.1** With the fake compartment signed out, `search_run` on `linkedin` pauses with a `signed_out` human step that says to sign in in Handyman. With the fake signed in, the same run proceeds. No credential ever crosses the endpoint.
+- **AT-5.2** `search_run` with a criteria body maps to the compartment's golden search action, extracts the results, and merges them with a fixture alert sighting of the same job.
 - **AT-5.3** `job_get` fetches a description; `search_run` with recommendations on returns the recommended collection; `profile_read_linkedin` stores a `linkedin_profile` source with text offsets.
-- **AT-5.4** A challenge page during pagination pauses the run, opens the human step and resumes from the same page once cleared.
+- **AT-5.4** A challenge report during pagination pauses the run, opens the human step and resumes from the same page in the same run once the compartment reports healthy within the wait limit.
 - **AT-5.5** The planner spends the day's 200 loads in priority order and reports what it deferred.
 - **AT-5.6** `schedule_set` refuses a schedule that includes people search; a direct `linkedin_search_people` call works.
 - **AT-5.7** `tools/list` contains no messaging, connection, apply or save-job tool.
 
 **Client check.** The scenarios' flow in demo mode in both clients.
 
-**Real-account manual checks** (main account).
+**Real-account manual checks** (main account, through Handyman's compartment).
 
-- **MC-5.1** From Claude Desktop, ask job-seeker to open LinkedIn; sign in by hand in the window, including two-factor; the session becomes `signed_in`.
-- **MC-5.2** Ask for a search of the roles the user targets; results arrive with sources, and the day's page count is shown.
-- **MC-5.3** Sign out inside the window to force a login wall during a run; the run pauses, notifies, opens the window, and resumes headless after sign-in.
-- **MC-5.4** A scheduled LinkedIn search runs overnight from the service; the report shows its page loads under the cap.
-- **MC-5.5** The session survives a service restart and a reboot.
+- **MC-5.1** Sign in to LinkedIn by hand in Handyman's compartment, including two-factor; `connectors_list` and `status` show the compartment signed in.
+- **MC-5.2** From Claude Desktop, ask for a search of the roles the user targets; results arrive with sources, and the day's page count is shown.
+- **MC-5.3** Sign out inside the compartment to force a sign-in wall during a run; the run pauses, notifies, and resumes after sign-in in Handyman.
+- **MC-5.4** A scheduled LinkedIn search runs overnight from the service with Handyman running; the report shows its page loads under the cap. A second night with Handyman stopped skips LinkedIn with the clear report entry (design 7.7).
+- **MC-5.5** The compartment session survives a service restart and a reboot.
 
-**Manual steps for the user.** Do the spike week; sign in and complete two-factor by hand; accept the `tos_risk` flag; clear any challenge when notified.
+**Manual steps for the user.** Do the spike week; sign in to LinkedIn in Handyman's compartment and complete two-factor by hand; accept the `tos_risk` flag; clear any challenge in Handyman when notified.
 
-**Risks.** Account restriction, markup drift and session durability (section 18).
+**Risks.** Account restriction, markup drift and Handyman availability (section 18).
 
 ## 11. Phase 6: search with the LinkedIn profile
 
@@ -363,28 +363,28 @@ Test counts are the test functions in each suite today; parametrised cases add m
 **Scope.**
 
 - **Grounding audit,** ported from `tailor/tools/grounding_audit.py` into `core/grounding`, used here and by resumes in phase 10.
-- **`linkedin_profile_propose`, `linkedin_profile_apply`, `linkedin_profile_get`, `linkedin_profile_edits_list`** and the `edit_linkedin_profile` prompt (design 7.5): headline, About, an existing experience entry's description, and skills.
-- **The `apply_profile_edit` action** (`profile.write@1`, risk `write_external`): re-read before writing, apply in a visible headed window through LinkedIn's own forms, re-read after saving, and verify. At most 5 edits a day, inside the page-load cap.
-- **The `assisted` mode** of the binding: open the form and show the text, write nothing.
+- **`linkedin_profile_propose`, `linkedin_profile_apply`, `linkedin_profile_get`, `linkedin_profile_edits_list`** and the `edit_linkedin_profile` prompt (design 7.6): headline, About, an existing experience entry's description, and skills.
+- **The `apply_profile_edit` action** (`profile.write@1`, risk `write_external`): re-read before writing, apply through the compartment's trusted input with the compartment visible so the user can watch, re-read after saving, and verify. At most 5 edits a day, inside the page-load budget.
+- **The `assisted` mode** of the binding: the compartment opens the form and shows the text; nothing is written.
 - **Docs.** `CLAUDE.md`'s LinkedIn trust rule is updated to the new rule: read-only, except own-profile edits that the user approved.
 
-**MCP acceptance** (fictional edit forms served by request routing, with a fake that records what was submitted).
+**MCP acceptance** (a fake Handyman endpoint whose edit-form fixture records what was submitted).
 
 - **AT-7.1** `linkedin_profile_propose` for a headline returns the diff and a passing grounding audit, and creates a pending approval. Nothing was submitted.
 - **AT-7.2** An About text with a number that is in no claim is refused, naming the number. After `profile_add_statement` records the fact, the same text passes.
-- **AT-7.3** `approval_decide`, then `linkedin_profile_apply`: a headed context is launched, the fake receives exactly the approved text, the re-read matches, and the edit is `verified`.
+- **AT-7.3** `approval_decide`, then `linkedin_profile_apply`: the fake compartment receives exactly the approved text, the re-read matches, and the edit is `verified`.
 - **AT-7.4** An approval for one text does not apply a different text (hash mismatch).
 - **AT-7.5** When the live section changed after the proposal, the apply stops with `superseded` and submits nothing.
 - **AT-7.6** When the form no longer matches the selectors, the apply stops, opens a human step, and returns the approved text for pasting.
 - **AT-7.7** A declined elicitation rejects the edit; nothing is submitted.
 - **AT-7.8** A schedule that includes an apply is refused, and a sixth edit in a day is refused.
-- **AT-7.9** In `assisted` mode, the form opens and nothing is submitted.
+- **AT-7.9** In `assisted` mode, the compartment reports the form open and nothing is submitted.
 
-**Client check.** In demo mode, both clients: "tighten my headline", see the diff, say yes, watch the demo window apply it.
+**Client check.** In demo mode, both clients: "tighten my headline", see the diff, say yes, watch the demo compartment apply it.
 
 **Real-account manual checks.**
 
-- **MC-7.1** Beforehand, the user checks their LinkedIn setting for sharing profile changes with their network. Then, in Claude Desktop, one small, reversible edit (for example, adding one skill the profile already evidences): see the diff, say yes, watch the window, confirm `verified`; then revert it the same way.
+- **MC-7.1** Beforehand, the user checks their LinkedIn setting for sharing profile changes with their network. Then, in Claude Desktop, one small, reversible edit (for example, adding one skill the profile already evidences): see the diff, say yes, watch the compartment, confirm `verified`; then revert it the same way.
 - **MC-7.2** One similar edit from Codex, approved through elicitation if Codex supports it, otherwise in chat.
 
 **Manual steps for the user.** Check the network-sharing setting; approve each edit; keep `assisted` mode if automated edits ever draw a challenge.
@@ -407,7 +407,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
   A connector without proof stays out of the registry and its issue stays open; the phase ships with the proven ones.
 - **`notion`** (`tracker.export@1`) and the `notion_sync` tool; `NOTION_SETUP.md` updated.
 - **`github-public`** and `profile_expand_scan`, from `expand/`.
-- **Retired:** `run alerts` (its LinkedIn and Gmail halves), the posting-scorer agent, the `notion-sync` command, the Electron app shell with its socket endpoint and relay, `linkedin/client.py`, `linkedin/source.py`, every Python MCP server tool except `tailor` and `upskill_report`, and the Python modules listed for phase 8 in section 4.3. `tools/posting_guard.py` and `tools/page_decode.py` stay for the `/upskill` workflow until phase 9. The Python MCP server stays, trimmed to those two tools. `import-legacy` stops accepting new imports.
+- **Retired:** `run alerts` (its LinkedIn and Gmail halves), the posting-scorer agent, the `notion-sync` command, the vendored LinkedIn app copy in `linkedin/app/` (the compartment is Handyman's), `linkedin/client.py`, `linkedin/source.py`, every Python MCP server tool except `tailor` and `upskill_report`, and the Python modules listed for phase 8 in section 4.3. `tools/posting_guard.py` and `tools/page_decode.py` stay for the `/upskill` workflow until phase 9. The Python MCP server stays, trimmed to those two tools. `import-legacy` stops accepting new imports.
 
 **MCP acceptance.**
 
@@ -492,11 +492,11 @@ Test counts are the test functions in each suite today; parametrised cases add m
 | Phase 0 | Install Node.js 22 if missing | Prerequisite for the npm install |
 | Phase 1 | Run `setup`; allow edits to the Claude Desktop and Codex configuration; restart Claude Desktop | Changes the user's own app settings |
 | Phase 1 | MC-1.1: import the predecessor's real state | Real personal data, never in CI |
-| Phase 2 | Allow the background item and notifications in macOS; consent to the browser download | OS permission prompts |
+| Phase 2 | Allow the background item and notifications in macOS; install and start Handyman | OS permission prompts; Handyman is a separate app the user owns |
 | Phase 3 | Choose the AI adapter backend; sign in to that CLI or set the API key | The user's own accounts and secrets |
 | Every phase | The client check in Claude Desktop and Codex | Real clients are not scriptable in CI |
-| Phase 5 | The spike week; sign in to LinkedIn and complete two-factor by hand; accept `tos_risk` | Credentials and consent are the user's alone |
-| Phase 5 onwards | Clear a challenge when notified, in the window job-seeker opens | job-seeker never answers a security check |
+| Phase 5 | The spike week; sign in to LinkedIn in Handyman's compartment and complete two-factor by hand; accept `tos_risk` | Credentials and consent are the user's alone |
+| Phase 5 onwards | Clear a challenge when notified, in Handyman's compartment | job-seeker never answers a security check |
 | Phases 3, 6, 9 | Approve or reject criteria changes | Nothing changes criteria without approval |
 | Phase 6 | Review the claims drawn from the LinkedIn profile | Only the user knows what is true |
 | Phase 7 | Check LinkedIn's network-sharing setting; approve each profile edit | A write to the user's public profile |
@@ -508,17 +508,18 @@ Test counts are the test functions in each suite today; parametrised cases add m
 | Risk | Phase | Impact | Mitigation | Watch for |
 |---|---|---|---|---|
 | **LinkedIn restriction of the main account.** LinkedIn's User Agreement prohibits automated access, and the account in use is the user's main one | 5 to 7 | High | Own account only; 200 page loads a day and 40 an hour, one at a time with 3 to 7 second gaps; details only for top candidates; stop at any challenge and never evade detection; explicit `tos_risk` consent; a per-binding off switch. LinkedIn's alert emails remain a route that needs no session | Challenge frequency in the spike and in reports. On any restriction notice: disable the binding, fall back to alert emails, and stop profile writes |
-| **Profile writes.** A write is more visible than a read, and edits can notify the user's network | 7 | High | Approval for every edit, bound to its text; at most 5 a day; a visible headed window; re-read before and after; the `assisted` mode as a fallback; v1 limited to four kinds of section | Challenges after an edit; a `failed` or `superseded` edit |
-| **Headless session durability.** Sites may challenge headless browsers more often; a crash can lose recent cookies; upgrades can change the profile format | 2, 5 | High | The spike; the same build and profile in both modes; clean shutdown; a re-probe after every browser upgrade; `requiresHeaded` as a fallback | Human steps per week in reports |
-| **LinkedIn markup drift** | 5 to 7 | Medium | Captures, probes, `selectorsVersion`, a `degraded` state that opens a human step; edits fail closed | Zero-result runs; apply failures |
-| **The background service cannot open windows** | 2 | High | A LaunchAgent limited to the graphical session; MC-2.1 on the real machine; the in-process fallback | MC-2.1; human steps that never show a window |
+| **Profile writes.** A write is more visible than a read, and edits can notify the user's network | 7 | High | Approval for every edit, bound to its text; at most 5 a day; the compartment visible while it applies; re-read before and after; the `assisted` mode as a fallback; v1 limited to four kinds of section | Challenges after an edit; a `failed` or `superseded` edit |
+| **Handyman not running.** Scheduled runs that need a browser site require Handyman to be running | 2 onwards | Medium | Browser steps are skipped with a clear report entry and remedy, never retried; API sources still run (design 7.7); `setup --check` probes the endpoint | Skipped sources in reports |
+| **Compartment changes in Handyman.** The adapter depends on Handyman's action surface and status reports | 5 onwards | Medium | The endpoint shape is the one `linkedin/client.py` already speaks; the client maps every failure to a specific error; fixture tests pin the exchanges; the binding goes `degraded` and opens a human step on an unknown response | `degraded` bindings; failed fixture runs after a Handyman upgrade |
+| **LinkedIn markup drift** | 5 to 7 | Medium | Handyman's captures, probes and `selectorsVersion`; a `degraded` binding that opens a human step; edits fail closed | Zero-result runs; apply failures |
+| **The background service stops** | 2 | Medium | The LaunchAgent's `KeepAlive`; the in-process fallback in the MCP process; queued runs survive in the database | Stale heartbeats in `status` |
 | **Assistant CLI changes.** Flags and output formats of Claude Code or Codex change | 3 onwards | Medium | One backend module per CLI; tested versions recorded; a `setup --check` probe; a failing backend opens a human step and the call site falls back | Failed `ai_calls` |
 | **Prompt injection into the adapter.** Posting text reaches a model | 3 onwards | Medium | The posting guard first; the untrusted block; the adapter runs with no tools; every output is checked deterministically; proposals still need approval | Guard findings in `ai_calls` inputs |
 | **MCP client differences** in resources, prompts and elicitation | 0 onwards | Medium | Tools alone carry every flow; the client matrix; the chat approval channel when elicitation is missing | The client checks |
 | **Port gaps.** A Python behaviour is missed | 1 to 10 | Medium | Tests translated before code; parity runs for pure functions; Python retired only after its replacement is in use | Parity diffs; regressions reported in the client checks |
 | **Two states during the port.** The predecessor's JSON and the new database diverge | 1 to 8 | Low | Repeatable `import-legacy`; the table in section 4.2 says which side owns each capability | Counts in MC-1.1 and later |
 | **Native modules.** The SQLite driver or keychain binding fails to install | 1 | Medium | The storage decision checks all three platforms; prebuilt binaries; the encrypted-file fallback | Setup failures |
-| **Install footprint.** Chromium (about 150 MB) and Tectonic | 2, 10 | Low | Downloaded only with consent and only when the feature is used; `setup --check` reports what is missing | Setup failures |
+| **Install footprint.** Tectonic | 10 | Low | Downloaded only with consent and only when the feature is used; `setup --check` reports what is missing | Setup failures |
 | **Unknown alert formats; portal and Adzuna terms** | 8 | Medium | Proof before code; unproven connectors stay unregistered; terms checked again when each connector is built | The first real alert per portal; HTTP 429 rates |
 | **Private data in a public repository** | All | High | The data directory outside the repository, enforced; fixture-hygiene and secret scans; captures never in the repository; fictional fixtures; the noreply author | CI scan results |
 
@@ -535,7 +536,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 ## 20. Not in this plan
 
 - The Command Center integration.
-- WhatsApp, or any browser connector beyond LinkedIn.
+- WhatsApp. Browser sites beyond LinkedIn (for example Naukri or iimjobs) join when Handyman ships those compartments; each is then one thin connector here (design 7.8).
 - A network MCP transport.
 - Email notifications, or a local web server; the pipeline page is a static file.
 - LinkedIn messaging, connection requests, applying, or scheduled people search.
