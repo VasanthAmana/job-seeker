@@ -489,7 +489,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 
 | When | Step | Why it cannot be automated |
 |---|---|---|
-| Phase 0 | Install Node.js 22 if missing | Prerequisite for the npm install |
+| Phase 0 | Install Node.js 22 (22.13 or later from phase 1) if missing | Prerequisite for the npm install |
 | Phase 1 | Run `setup`; allow edits to the Claude Desktop and Codex configuration; restart Claude Desktop | Changes the user's own app settings |
 | Phase 1 | MC-1.1: import the predecessor's real state | Real personal data, never in CI |
 | Phase 2 | Allow the background item and notifications in macOS; install and start Handyman | OS permission prompts; Handyman is a separate app the user owns |

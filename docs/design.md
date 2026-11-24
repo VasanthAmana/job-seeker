@@ -1,6 +1,6 @@
 # job-seeker design
 
-- **Status:** revised after the design review, for the build. Nothing in this document is built yet.
+- **Status:** revised after the design review, for the build. Phases 0 and 1 of the execution plan are built (the toolchain and MCP harness; the engine core, storage, Engine API, MCP server, pipeline page, legacy import and first-cut setup); the rest is not yet.
 - **Companion:** [execution-plan.md](execution-plan.md) turns this design into phases, MCP first.
 - **Layout:** the predecessor `jobseek` code now lives at this repository's root with its history. Paths in section 11 use that layout.
 
@@ -98,9 +98,9 @@ flowchart LR
 
 | Concern | Choice | Notes |
 |---|---|---|
-| Runtime | Node.js 22 LTS or later | One runtime for every component |
+| Runtime | Node.js 22.13 or later | One runtime for every component. 22.13 is the first 22.x release with `node:sqlite` unflagged |
 | Language | TypeScript, `strict` | Compiled to JavaScript for the npm package |
-| Database | SQLite through Node's built-in `node:sqlite`, with `better-sqlite3` as the fallback | Chosen in phase 1 by a short check of WAL, `VACUUM INTO` and prebuilt availability; recorded in `docs/decisions/` |
+| Database | SQLite through Node's built-in `node:sqlite`; `better-sqlite3` stays the fallback | Chosen in phase 1 after checking WAL, `VACUUM INTO` and install on all three CI platforms: [storage-driver.md](decisions/storage-driver.md) |
 | MCP | The official TypeScript SDK, stdio transport | Tools, resources, prompts and elicitation |
 | Browser work | Handyman compartments, reached over Handyman's local endpoint | job-seeker runs no browser of its own (section 7) |
 | Secrets | The OS keychain through a maintained native binding, with an encrypted-file fallback | Section 5.5 |
@@ -111,7 +111,7 @@ flowchart LR
 
 ## 4. The engine boundary
 
-- **Shape.** The engine exposes named operations. Each one has a kind (command or query), a risk (`read`, `write_internal`, or `write_external` for an action that changes something outside job-seeker, such as a LinkedIn profile edit), and an input and output JSON Schema under `schemas/engine/v1/`. MCP tools, CLI commands and service jobs are thin adapters generated from or checked against that table, so there is one source of truth. A `write_external` operation can only execute an approved approval record.
+- **Shape.** The engine exposes named operations. Each one has a kind (command or query), a risk (`read`, `write_internal`, or `write_external` for an action that changes something outside job-seeker, such as a LinkedIn profile edit), and an input and output JSON Schema in `schemas/engine/v1/<operation>.json` (shared definitions in `_common.json`, inlined when loaded, so MCP clients get self-contained schemas); `src/engine/types.gen.ts` is generated from them (`npm run gen:types`). MCP tools, CLI commands and service jobs are thin adapters generated from or checked against that table, so there is one source of truth. A `write_external` operation can only execute an approved approval record.
 - **Versioning.** `ENGINE_API = 1`. A breaking change adds `v2` schemas and keeps `v1` working for one minor release.
 - **Events.** Every state change appends a domain event, such as `job.found`, `job.scored`, `criteria.changed`, `approval.decided`, `linkedin.profile_edit_applied`, `application.state_changed`, `human_step.opened` and `run.finished`. Events are stored in an `events` table with a monotonic cursor. Reports read from it, and a later integration can sync from it.
 - **How CC can wrap it later (not built now):**
@@ -136,6 +136,7 @@ The data directory is `~/Library/Application Support/job-seeker` on macOS, `%LOC
   tools/tectonic/              # the pinned Tectonic build
   run/wake                     # touched to wake the service
   backups/                     # database snapshot taken before each migration
+  secrets.enc                  # only with the encrypted-file fallback; its key file sits outside this directory
   logs/                        # redacted, rotated
 ```
 
@@ -151,7 +152,7 @@ Browser profiles, cookies and page captures live with Handyman, not in this dire
 | `criteria_changes` | id, kind (`create`, `modify`, `archive`), target, proposed body or patch, proposed_by (`user`, `assistant`, `ai_adapter`, `research:<run_id>`, `profile:<version>`), evidence refs, approval id, status (`proposed`, `approved`, `rejected`, `superseded`) | Append-only. Rejected proposals are kept |
 | `approvals` | id, subject kind (`criteria_change`, `linkedin_profile_edit`), subject id, payload sha256, summary, status (`pending`, `approved`, `rejected`, `superseded`, `expired`), requested_by, requested_at, decided_by, channel (`chat`, `cli`, `mcp_elicitation`), user words, decided_at | **The one approval record** (section 9.1). An approval is bound to its payload's hash |
 | `linkedin_profile_edits` | id, section (`headline`, `about`, `experience:<entry>`, `skills`), before (as read, with its source id), after, diff, grounding audit, approval id, status (`proposed`, `approved`, `applying`, `applied`, `verified`, `failed`, `superseded`, `rejected`), applied_at, verify source id | Section 7.6 |
-| `jobs` | id, dedupe key, canonical URL, title, company, location, workplace, salary, seniority, description (guarded, untrusted), `partial`, first_seen, last_seen, status (`active`, `unreachable`, `expired`) | One row per real posting after dedupe |
+| `jobs` | id, dedupe key, canonical URL, title, company, location, workplace, salary, seniority, description (guarded, untrusted), `partial`, deadline, posted_at, first_seen, last_seen, updated_at, status (`active`, `skipped`, `unreachable`, `expired`), expired_reason, and the unreachable-retry fields (fetch attempts, first unreachable, last fetch error) | One row per real posting after dedupe. `skipped` keeps the predecessor's skipped entries out of the ranking |
 | `job_sightings` | job id, connector, binding, external id, raw URL, run id, criteria set, record (`job.posting@1`), seen_at | Provenance: every source of every job |
 | `job_features` | job id, skills, normalised title, certifications, salary figures | Small and kept after descriptions are pruned, so research evidence stays valid |
 | `job_scores` | job id, profile version, criteria version, method (`rule`, `assistant`, `ai_review`), score 0-100, band, gate verdicts, dimension scores, reason, scored_at | Every method is kept. Section 8 says which one is shown |
@@ -165,6 +166,8 @@ Browser profiles, cookies and page captures live with Handyman, not in this dire
 | `human_steps` | id, binding or compartment, run step, reason, detail, what the user should open, opened_at, notified_at, resolved_at, resolution | **The one needs-human signal** (section 7.4) |
 | `ai_calls` | id, purpose, backend, model, input refs, prompt sha256, output, validation result, duration, status, at | Every model call, kept for audit |
 | `events` | cursor, type, entity, payload, at | Section 4 |
+| `secret_refs` | name, backend (`keychain`, `file`), created_at, updated_at | Which secrets exist and where; never a value (section 5.5) |
+| `legacy_imports` | kind (`seen_job`, `tracker_row`, `shortlist`), legacy key, job id, imported_at | What `import-legacy` has imported, so a repeat run skips it (section 5.4) |
 
 ### 5.3 Documents and evidence
 
@@ -436,6 +439,8 @@ Requirements that fall out of this split, for Handyman's own roadmap (nothing he
    - a salary floor, applied when the salary is known.
 
    Weighted dimensions follow (title, skills against profile evidence, domain, seniority and location), with weights per criteria set. This ports `rank_state`'s gates, bands and unreachable-retry rules.
+
+   Until criteria sets arrive in phase 3, the rules come from `ranking.rules` in `config.json`, and the predecessor's imported scores keep their vetoes but are not shown as current ([interim-ranking-rules.md](decisions/interim-ranking-rules.md)).
 5. **Judgement score, optional.**
    - **Assistant:** the MCP prompt `review_matches` asks the assistant to score the top matches on the rubric dimensions, and `rank_submit` stores them as method `assistant`.
    - **AI adapter:** when match review is switched on, a `match_review` step after a scheduled run sends the top matches to the adapter, and the same validation stores them as method `ai_review`.

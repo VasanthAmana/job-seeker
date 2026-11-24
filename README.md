@@ -47,7 +47,7 @@ When no assistant is connected, a few named, switchable steps (profile intake, m
 
 Early design. The code of its predecessor, jobseek, now lives in this repository with its history and works as it did before; the section below covers it.
 The design document and the execution plan are in `docs/`.
-The new TypeScript engine is at phase 0: `src/` holds a stub `job-seeker mcp` stdio server with one tool, `status`, and `test/mcp/` the MCP acceptance harness (`npm ci && npm test`, Node.js 22 or later).
+The new TypeScript engine is at phase 1 (Node.js 22.13 or later; `npm ci && npm test` builds it and runs the unit suites and the MCP acceptance scenarios in `test/mcp/`). It keeps its state in SQLite in a data directory outside any repository and serves it over MCP: `job-seeker setup` adds it to Claude Desktop and Codex, `job-seeker import-legacy --from <this folder>` imports the predecessor's `state/` and `tracker.csv` (repeatable), `job-seeker demo init` creates a fictional data set to try it with, and `job-seeker --help` lists the rest. The predecessor below keeps working alongside it.
 
 ## Current code (migrated from jobseek)
 

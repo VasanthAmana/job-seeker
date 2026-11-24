@@ -125,6 +125,23 @@ SOFTWARE.
   competencies, not only technical skills) and rebased on jobseek's
   state-through-tools rule
 
+## Ported to TypeScript (job-seeker engine, phase 1)
+
+These files port the files above to TypeScript; the attribution carries
+over:
+
+- `src/core/dedupe/jobKey.ts` - port of `tools/job_key.py`
+- `src/core/guard/postingGuard.ts`, `src/core/guard/pageDecode.ts` - ports
+  of `tools/posting_guard.py` and `tools/page_decode.py`
+- `src/core/jobs.ts` - candidate selection and store reshaped from
+  `tools/alert_state.py` onto SQLite
+- `src/core/ranking/score.ts`, `src/core/ranking/judgement.ts` - the score
+  arithmetic, bands, gates, apply path, deadline sweep and unreachable
+  retry of `tools/rank_state.py`
+- `src/pipeline/page.ts` - the pipeline page, reshaped from
+  `dashboard/build.py` (status buckets, stats, inline-SVG charts, filterable
+  table, escaping rule)
+
 The portal CLIs in ai-job-search derive from Mikkel Krogholm's skills repo
 (acknowledged in its README); none of them are copied here.
 
