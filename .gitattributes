@@ -1,0 +1,2 @@
+# Generated output is compared byte-for-byte with the generator, which emits LF.
+src/engine/types.gen.ts text eol=lf

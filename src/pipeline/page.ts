@@ -17,6 +17,7 @@ import { join } from "node:path";
 import { APPLICATION_STATES } from "../core/applications.js";
 import type { CoreContext } from "../core/context.js";
 import { listJobs, type JobSummary } from "../core/jobs.js";
+import { LEGACY_DATE_NOTE } from "../legacy/import.js";
 import { addDays, isoDate } from "../util/clock.js";
 import { escapeHtml as esc } from "../util/text.js";
 
@@ -128,12 +129,14 @@ function applicationRows(ctx: CoreContext, today: string): PipelineRow[] {
     .all() as unknown as ApplicationJoin[];
   return apps.map((app) => {
     const events = ctx.db
-      .prepare("SELECT to_state, at, note FROM application_events WHERE job_id = ? ORDER BY id")
-      .all(app.job_id) as Array<{ to_state: string; at: string; note: string | null }>;
+      .prepare("SELECT to_state, at, channel, note FROM application_events WHERE job_id = ? ORDER BY id")
+      .all(app.job_id) as Array<{ to_state: string; at: string; channel: string; note: string | null }>;
     const appliedEvent = events.find((e) => e.to_state === "applied");
     const last = events[events.length - 1];
     const dateText = appliedEvent?.at ?? last?.at ?? app.created_at;
-    const applied = parseDay(appliedEvent?.at);
+    // An import with no full tracker date stamps the import time; that is not when the user applied.
+    const undated = appliedEvent?.channel === "import" && Boolean(appliedEvent.note?.includes(LEGACY_DATE_NOTE));
+    const applied = undated ? null : parseDay(appliedEvent?.at);
     // A follow-up only for submitted-and-silent applications with a full date.
     const followup = app.state === "applied" && applied ? addDays(applied, FOLLOWUP_DAYS) : null;
     const deadline = ["found", "shortlisted", "resume_prepared", "applied"].includes(app.state) ? parseDay(app.deadline) : null;
