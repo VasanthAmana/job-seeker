@@ -1,0 +1,138 @@
+{
+  "seen": {
+    "acme-analytics_director-ai-strategy": {
+      "title": "Director, AI Strategy",
+      "company": "Acme Analytics",
+      "url": "https://acme.example/jobs/101?trk=alert_email",
+      "source": "linkedin",
+      "location": "Denver, CO",
+      "first_seen": "2026-10-18",
+      "status": "ranked",
+      "rank_score": 82,
+      "rank_verdict": "Strong Fit",
+      "rank_date": "2026-10-19",
+      "location_verdict": "PASS",
+      "seniority_gate": "PASS",
+      "engineering_role": false,
+      "reason": "Enterprise AI strategy ownership at Director level.",
+      "strengths": [
+        "enterprise AI roadmap ownership"
+      ],
+      "gaps": [
+        "regulated-industry experience"
+      ],
+      "guard": "clean",
+      "deadline": "2026-12-15"
+    },
+    "beta-health_vp-ai-transformation": {
+      "title": "VP, AI Transformation",
+      "company": "Beta Health",
+      "url": "https://beta.example/careers/202",
+      "source": "indeed",
+      "location": "Remote, US",
+      "first_seen": "2026-10-20",
+      "status": "ranked",
+      "rank_score": 70,
+      "rank_verdict": "Good Fit",
+      "rank_date": "2026-10-21",
+      "location_verdict": "PASS",
+      "seniority_gate": "PASS",
+      "engineering_role": false,
+      "reason": "VP transformation scope, heavier on delivery than strategy.",
+      "strengths": [
+        "transformation program leadership"
+      ],
+      "gaps": [
+        "healthcare domain"
+      ],
+      "guard": "clean"
+    },
+    "gamma-retail_head-of-ai-innovation": {
+      "title": "Head of AI Innovation",
+      "company": "Gamma Retail",
+      "url": "https://gamma.example/jobs/303",
+      "source": "linkedin",
+      "location": "Remote (US)",
+      "first_seen": "2026-10-22",
+      "status": "ranked",
+      "rank_score": 64,
+      "rank_verdict": "Good Fit",
+      "rank_date": "2026-10-23",
+      "location_verdict": "PASS",
+      "seniority_gate": "PASS",
+      "engineering_role": false,
+      "reason": "Innovation portfolio leadership at the right scope.",
+      "strengths": [
+        "innovation portfolio"
+      ],
+      "gaps": [],
+      "guard": "clean",
+      "deadline": "2026-11-28"
+    },
+    "delta-robotics_machine-learning-engineer": {
+      "title": "Machine Learning Engineer",
+      "company": "Delta Robotics",
+      "url": "https://delta.example/jobs/404",
+      "source": "ladders",
+      "location": "Denver, CO",
+      "first_seen": "2026-10-23",
+      "status": "ranked",
+      "rank_score": 91,
+      "rank_verdict": "Strong Fit",
+      "rank_date": "2026-10-24",
+      "location_verdict": "PASS",
+      "seniority_gate": "PASS",
+      "engineering_role": true,
+      "reason": "Engineering IC role: out of scope despite the domain match.",
+      "strengths": [],
+      "gaps": [],
+      "guard": "clean"
+    },
+    "epsilon-bank_senior-manager-ai-strategy": {
+      "title": "Senior Manager, AI Strategy",
+      "company": "Epsilon Bank",
+      "url": "https://epsilon.example/jobs/505",
+      "source": "linkedin",
+      "location": "Remote, US",
+      "first_seen": "2026-10-25",
+      "status": "new"
+    },
+    "zeta-logistics_director-of-digital-transformation": {
+      "title": "Director of Digital Transformation",
+      "company": "Zeta Logistics",
+      "url": "https://zeta.example/jobs/606",
+      "source": "indeed",
+      "location": "Chicago, IL",
+      "first_seen": "2026-10-26",
+      "status": "ranked",
+      "rank_score": 66,
+      "rank_verdict": "Good Fit",
+      "rank_date": "2026-10-27",
+      "location_verdict": "FAIL",
+      "seniority_gate": "PASS",
+      "engineering_role": false,
+      "reason": "On-site in Chicago: relocation required.",
+      "strengths": [],
+      "gaps": [],
+      "guard": "clean"
+    },
+    "eta-media_ai-strategy-lead": {
+      "title": "AI Strategy Lead",
+      "company": "Eta Media",
+      "url": "https://eta.example/jobs/707",
+      "source": "ladders",
+      "location": "Denver, CO",
+      "first_seen": "2026-10-02",
+      "status": "expired"
+    },
+    "theta-labs_chief-of-staff-ai": {
+      "title": "Chief of Staff, AI",
+      "company": "Theta Labs",
+      "url": "https://theta.example/jobs/808",
+      "source": "linkedin",
+      "location": "Remote, US",
+      "first_seen": "2026-10-27",
+      "status": "skipped"
+    }
+  }
+}

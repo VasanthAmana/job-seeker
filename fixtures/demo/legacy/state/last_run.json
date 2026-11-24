@@ -1,0 +1,18 @@
+{
+  "ranked": [
+    {
+      "key": "acme-analytics_director-ai-strategy",
+      "title": "Director, AI Strategy"
+    },
+    {
+      "key": "gamma-retail_head-of-ai-innovation",
+      "title": "Head of AI Innovation"
+    }
+  ],
+  "vetoed": [],
+  "expired": [],
+  "unreachable": [],
+  "gave_up": [],
+  "errors": [],
+  "written": true
+}
