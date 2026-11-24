@@ -12,6 +12,7 @@
  * fake Handyman endpoint, scripted Handyman, service-in-the-loop) to
  * {@link HarnessOptions} when they introduce them.
  */
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -39,6 +40,22 @@ export const PLAIN_CLIENT: ClientProfile = { elicitation: false };
 
 export interface HarnessOptions {
   profile?: ClientProfile;
+  /** Extra environment for the server, such as JOB_SEEKER_NOW (the fake clock). */
+  env?: Record<string, string>;
+  /** Runs before the server starts, against the fresh data directory. */
+  prepare?: (home: string) => void | Promise<void>;
+}
+
+/** The fake clock every scenario runs at unless it says otherwise. */
+export const FAKE_NOW = "2026-11-02T09:00:00.000Z";
+
+/** Run the built CLI against a data directory, as the user would in a terminal. */
+export function runCli(home: string, args: string[], env: Record<string, string> = {}) {
+  const result = spawnSync(process.execPath, [CLI_PATH, ...args], {
+    env: { ...getDefaultEnvironment(), JOB_SEEKER_HOME: home, JOB_SEEKER_NOW: FAKE_NOW, ...env },
+    encoding: "utf8",
+  });
+  return { status: result.status, stdout: result.stdout, stderr: result.stderr };
 }
 
 export interface McpHarness {
@@ -54,12 +71,13 @@ export interface McpHarness {
 
 export async function startHarness(options: HarnessOptions = {}): Promise<McpHarness> {
   const profile = options.profile ?? PLAIN_CLIENT;
-  const home = mkdtempSync(join(tmpdir(), "job-seeker-mcp-"));
+  const home = join(mkdtempSync(join(tmpdir(), "job-seeker-mcp-")), "home");
+  await options.prepare?.(home);
 
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [CLI_PATH, "mcp"],
-    env: { ...getDefaultEnvironment(), JOB_SEEKER_HOME: home },
+    env: { ...getDefaultEnvironment(), JOB_SEEKER_HOME: home, JOB_SEEKER_NOW: FAKE_NOW, ...options.env },
     stderr: "pipe",
   });
 
@@ -95,7 +113,7 @@ export async function startHarness(options: HarnessOptions = {}): Promise<McpHar
   try {
     await client.connect(transport);
   } catch (error) {
-    rmSync(home, { recursive: true, force: true });
+    rmSync(join(home, ".."), { recursive: true, force: true });
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`MCP harness failed to start the server: ${message}\nserver stderr:\n${stderr}`);
   }
@@ -107,7 +125,7 @@ export async function startHarness(options: HarnessOptions = {}): Promise<McpHar
     serverStderr: () => stderr,
     close: async () => {
       await client.close();
-      rmSync(home, { recursive: true, force: true });
+      rmSync(join(home, ".."), { recursive: true, force: true });
     },
   };
 }
