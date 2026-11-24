@@ -386,9 +386,9 @@ already_imported: number
 skipped_with_application: number
 unknown_keys: number
 }
-audit?: {
+audit?: ({
 
-}
+} | null)
 totals: {
 jobs: number
 applications: number

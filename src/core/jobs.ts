@@ -241,9 +241,11 @@ export interface NewJob {
 export function insertJob(ctx: CoreContext, job: NewJob): string {
   const canonical = job.url ? canonicalizeUrl(job.url) : null;
   let key = makeKey(job.company, job.title, job.url ?? "");
-  if (ctx.db.prepare("SELECT 1 FROM jobs WHERE dedupe_key = ?").get(key)) {
+  const base = key;
+  const identity = canonical ?? `${job.company}\n${job.title}`;
+  for (let attempt = 0; ctx.db.prepare("SELECT 1 FROM jobs WHERE dedupe_key = ?").get(key); attempt++) {
     // Same slug for a different posting: disambiguate by the URL's identity.
-    key = `${key}-${sha256(canonical ?? `${job.company}\n${job.title}`).slice(0, 6)}`;
+    key = `${base}-${sha256(attempt ? `${identity}\n${attempt}` : identity).slice(0, 6)}`;
   }
   const id = jobIdFor(key);
   const now = nowIso(ctx);

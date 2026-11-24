@@ -144,7 +144,10 @@
         ]
       },
       "audit": {
-        "type": "object"
+        "type": [
+          "object",
+          "null"
+        ]
       },
       "totals": {
         "type": "object",

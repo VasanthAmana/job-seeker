@@ -282,11 +282,12 @@ function importTracker(ctx: CoreContext, rows: Array<Record<string, string>>) {
     const sourceUrl = str(row.source) && /^https?:\/\//i.test(row.source as string) ? (row.source as string).trim() : null;
     const date = (row.date ?? "").trim();
     const fullDate = parseIsoDate(date);
-    let job = findExisting(ctx, sourceUrl ? canonicalizeUrl(sourceUrl) : null, company, role ?? "");
+    const title = role ?? "(untitled role)";
+    let job = findExisting(ctx, sourceUrl ? canonicalizeUrl(sourceUrl) : null, company, title);
     if (job) counts.matched_jobs++;
     else {
       const id = insertJob(ctx, {
-        title: role ?? "(untitled role)",
+        title,
         company,
         url: sourceUrl,
         deadline: str(row.deadline),
@@ -307,12 +308,16 @@ function importTracker(ctx: CoreContext, rows: Array<Record<string, string>>) {
     if (deadline) ctx.db.prepare("UPDATE jobs SET deadline = COALESCE(deadline, ?) WHERE id = ?").run(deadline, job.id);
     const mapped = STATUS_MAP[rawStatus.toLowerCase()];
     if (!mapped && !counts.unmapped_statuses.includes(rawStatus)) counts.unmapped_statuses.push(rawStatus);
-    const noteParts = [str(row.notes), mapped && rawStatus.toLowerCase() === mapped ? null : `legacy status: ${rawStatus || "(blank)"}`];
+    const noteParts = [
+      str(row.notes),
+      mapped && rawStatus.toLowerCase() === mapped ? null : `legacy status: ${rawStatus || "(blank)"}`,
+      date && !fullDate ? `legacy date: ${date}` : null,
+    ];
     setApplicationState(ctx, job.id, mapped ?? "found", {
       reported_by: "import",
       channel: "import",
       note: noteParts.filter(Boolean).join(" - ") || null,
-      at: fullDate ? `${fullDate}T00:00:00.000Z` : date || nowIso(ctx),
+      at: fullDate ? `${fullDate}T00:00:00.000Z` : nowIso(ctx),
     });
     record(ctx, "tracker_row", key, job.id);
     counts.imported++;
