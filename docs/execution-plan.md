@@ -88,14 +88,14 @@ The predecessor's `run alerts` workflow, its Python MCP server and its JSON stat
 | When | Still on the predecessor | Already on the new engine |
 |---|---|---|
 | Phase 4 ships | Everything | Nothing (demo data only) |
-| Phase 5 ships | `run alerts` with both its LinkedIn and Gmail ingest, ranking, the top-5 shortlist, Notion, tailor, upskill, expand, and the Python MCP server with all its tools, including its three LinkedIn tools. The predecessor's LinkedIn ingest still runs through `linkedin/client.py`, `linkedin/source.py` and Handyman's LinkedIn compartment | The new LinkedIn MCP tools (search, details, own profile, alerts), side by side with the predecessor's. The predecessor's shortlist stays the single shortlist: it ranks LinkedIn and Gmail jobs together |
+| Phase 5 ships | `run alerts` with both its LinkedIn and Gmail ingest, ranking, the top-5 shortlist, Notion, tailor, upskill, expand, and the Python MCP server with all its tools, including its three LinkedIn tools. The predecessor's LinkedIn ingest still runs through `linkedin/client.py`, `linkedin/source.py` and the vendored LinkedIn app at its own endpoint, which therefore stays installed | The new LinkedIn MCP tools (search, details, own profile, alerts), side by side with the predecessor's. The predecessor's shortlist stays the single shortlist: it ranks LinkedIn and Gmail jobs together |
 | Phase 8 ships | Tailor and upskill, on the Python MCP server trimmed to `tailor` and `upskill_report` | Profile, criteria, search, LinkedIn and Gmail alerts, ranking, the shortlist, applications, Notion. **Cutover:** `run alerts` (both halves), the posting-scorer agent, the vendored LinkedIn app copy (the compartment is Handyman's), `linkedin/client.py`, `linkedin/source.py` and every other Python server tool are removed in the same release, and the new engine's shortlist becomes the single shortlist |
 | Phase 9 ships | Tailor, on the Python MCP server trimmed to `tailor` | Research, replacing `upskill_report` |
 | Phase 10 ships | Nothing. The Python MCP server is removed | Everything |
 
 Phases 9 and 10 can ship in either order: the Python MCP server keeps whichever of `tailor` and `upskill_report` is not yet replaced, and it is removed with the second of the two. After the phase 8 cutover its tools read the predecessor's state as it stood at the cutover; for a job found later, the user runs `/tailor` with the URL from `job_get`.
 
-From phase 5 to phase 8 the predecessor's ingest and the new connector both call the same Handyman compartment, so one pacer and one set of per-site caps cover both sides, and the compartment's counters are the combined page-load count.
+From phase 5 to phase 8 the predecessor's ingest and the new connector use the same LinkedIn account through two endpoints with separate pacers: `linkedin/client.py` still resolves the vendored `linkedin-mcp` app's socket, while the new connector calls Handyman's endpoint (`<handyman data folder>/endpoint/handyman.sock`). So the user keeps their combined page views under the daily cap of 200, by setting a lower cap on the new connector or running it by hand only. Switching `linkedin/client.py` to Handyman's endpoint is what removes this mitigation: from then on one compartment's pacer and caps cover both sides.
 
 `job-seeker import-legacy` can be run again until phase 8; it merges newly seen jobs and tracker rows and skips what it already imported.
 
@@ -210,7 +210,7 @@ Test counts are the test functions in each suite today; parametrised cases add m
 - **Reports, basic.** `report@1` JSON and HTML for every run, and `latest.html`.
 - **Connector host.** The manifest schema and its validation, the registry, the contracts' schemas, the connector context, scoped HTTP, and the connector kit (`job-seeker connector test`).
 - **Handyman client** (design 7.2): endpoint resolution (0600 socket or named pipe, with the test override), the newline-delimited JSON-RPC client, and specific, actionable errors for "Handyman isn't running", "compartment missing" and every needs-human report. `setup --check` probes the endpoint and lists the compartments it serves.
-- **Browser steps** (design 7.3 and 7.7): a step on a browser connector probes the endpoint first, runs through the compartment, pauses as `waiting_for_human` on a needs-human report, and is skipped with reason `handyman_unreachable` when the endpoint is down - the run continues with its API sources and finishes `partial`, and the report names the skipped sources.
+- **Browser steps** (design 7.3 and 7.7): a step on a browser connector probes the endpoint first, runs through the compartment, pauses as `waiting_for_human` on a needs-human report, and is skipped with reason `handyman_unreachable` when the endpoint is down, or `compartment_missing` when Handyman does not serve that site - the run continues with its API sources and finishes `partial`, and the report names the skipped sources.
 - **Fixture connectors** for tests and demo mode only: `fixture-jobs` (API, recorded replies) and `fixture-site` (browser, a fake Handyman endpoint whose compartment can be flipped between healthy, signed-out and challenge).
 - **MCP tools.** `search_run` (on any registered connector, with an unsaved criteria body until phase 3 adds approvals), `run_status`, `schedules_list`, `schedule_set`, `schedule_delete`, `reports_list`, `report_get`, `connectors_list`, `connector_configure` and `human_steps_list`.
 
@@ -218,11 +218,11 @@ Test counts are the test functions in each suite today; parametrised cases add m
 
 - **AT-2.1** With the service running, `search_run` on `fixture-jobs` returns a queued run; the service executes it; `run_status` reports success; `jobs_list` shows the jobs with their source; a report exists.
 - **AT-2.2** With the service stopped, the same call runs in-process. When the service starts mid-run, the lease stops it from running the same run twice.
-- **AT-2.3** A `fixture-site` search meets a challenge report from the fake compartment. The run becomes `waiting_for_human`; `human_steps_list` shows the step; the fake notifier received one notification naming Handyman as the place to clear it. The scripted Handyman flips the compartment back to healthy; the run resumes from its cursor and succeeds. No retry went to the compartment while it reported needs-human.
+- **AT-2.3** A `fixture-site` search meets a challenge report from the fake compartment. The run becomes `waiting_for_human`; `human_steps_list` shows the step; the fake notifier received one notification naming Handyman as the place to clear it. The scripted Handyman flips the compartment back to healthy within the wait limit; the same run resumes from its cursor and succeeds. No retry went to the compartment while it reported needs-human.
 - **AT-2.4** With the fake clock, the planner defers the work that does not fit the day's budget (design 7.5) and `run_status` says so. The budget is shared between the service and an in-process run.
 - **AT-2.5** `schedule_set` creates an interval schedule; advancing the clock fires one run; a simulated sleep across three slots fires one catch-up run.
 - **AT-2.6** With the fake endpoint stopped (Handyman not running), a run that targets `fixture-site` skips that step with reason `handyman_unreachable`, runs its API steps, finishes `partial`, and the report and `status` name the skipped source and the remedy. A run started from MCP answers immediately that Handyman is not running.
-- **AT-2.7** A step left waiting past its limit ends as `needs_human`; the run is `partial`; the next run skips the connector without calling the compartment.
+- **AT-2.7** With the fake clock, a step left waiting past its wait limit (10 minutes for an MCP- or CLI-started run; 12 hours or the schedule's next run for a scheduled one) ends as `needs_human`; the run is `partial`; the next run skips the connector without calling the compartment while it reports needs-human, and resumes the step from its cursor once it reports healthy.
 
 **Client check.** In demo mode, ask Claude Desktop and Codex to run a search on the fixture site; when the demo compartment reports a challenge, the assistant explains that it is waiting and says to clear it in Handyman; once cleared, the assistant reports the results.
 
@@ -300,14 +300,14 @@ Test counts are the test functions in each suite today; parametrised cases add m
 - **Connector** (`connectors/linkedin/`): a thin TypeScript adapter over Handyman's LinkedIn compartment (design 7.5), with the criteria mapping ported from `linkedin/source.py`. Actions `search_jobs`, `get_job`, `recommended_jobs`, `read_own_profile` and `search_people` (`manualOnly`), and the `alerts` sync. The `tos_risk` acceptance when the binding is created.
 - **Budget planner** with the daily cap of 200, the hourly cap of 40 and the priority order (design 7.5). job-seeker plans within the budget; Handyman's compartment enforces the caps and its counters are what the report shows.
 - **MCP tools.** `search_run` and `alerts_ingest` on `linkedin`, `job_get` with a detail fetch, `profile_read_linkedin`, `linkedin_search_people`. `connectors_list` shows the compartment's reachability, sign-in state and counters as Handyman reports them.
-- **Retired:** nothing. The new LinkedIn tools ship alongside the predecessor's LinkedIn ingest: `run alerts` keeps its LinkedIn half, the Python server keeps its LinkedIn tools, and both reach the same Handyman compartment, until the phase 8 cutover (section 4.2), so the predecessor's shortlist stays the single, merged one.
+- **Retired:** nothing. The new LinkedIn tools ship alongside the predecessor's LinkedIn ingest: `run alerts` keeps its LinkedIn half, the Python server keeps its LinkedIn tools, and the vendored LinkedIn app they depend on stays, until the phase 8 cutover (section 4.2), so the predecessor's shortlist stays the single, merged one.
 
 **MCP acceptance** (a fake Handyman endpoint serving fictional LinkedIn fixtures).
 
 - **AT-5.1** With the fake compartment signed out, `search_run` on `linkedin` pauses with a `signed_out` human step that says to sign in in Handyman. With the fake signed in, the same run proceeds. No credential ever crosses the endpoint.
 - **AT-5.2** `search_run` with a criteria body maps to the compartment's golden search action, extracts the results, and merges them with a fixture alert sighting of the same job.
 - **AT-5.3** `job_get` fetches a description; `search_run` with recommendations on returns the recommended collection; `profile_read_linkedin` stores a `linkedin_profile` source with text offsets.
-- **AT-5.4** A challenge report during pagination pauses the run, opens the human step and resumes from the same page once the compartment reports healthy.
+- **AT-5.4** A challenge report during pagination pauses the run, opens the human step and resumes from the same page in the same run once the compartment reports healthy within the wait limit.
 - **AT-5.5** The planner spends the day's 200 loads in priority order and reports what it deferred.
 - **AT-5.6** `schedule_set` refuses a schedule that includes people search; a direct `linkedin_search_people` call works.
 - **AT-5.7** `tools/list` contains no messaging, connection, apply or save-job tool.

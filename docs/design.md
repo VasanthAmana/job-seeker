@@ -160,7 +160,7 @@ Browser profiles, cookies and page captures live with Handyman, not in this dire
 | `resumes` | id, job id, template id and sha, profile version, content (items with claim IDs), audit result, PDF and .docx paths, "why me" note path, created_at | Each item traces to claims, and each claim to source spans |
 | `applications` / `application_events` | job id, current state, resume id; event (from, to, at, reported_by, channel, note) | States: `found`, `shortlisted`, `resume_prepared`, `applied`, `interview`, `offer`, `rejected` |
 | `schedules` | id, kind (`search`, `alerts`, `research`, `match_review`, `maintenance`), targets, schedule (interval, cron or manual), time zone, enabled, next_run_at | Survives restarts because it lives in the database |
-| `runs` / `run_steps` | run (kind, trigger, status, lease, report id); step (connector, binding, criteria set, status, cursor, counts, redacted error) | Run statuses: `queued`, `running`, `waiting_for_human`, `succeeded`, `partial`, `failed`, `cancelled` |
+| `runs` / `run_steps` | run (kind, trigger, status, lease, report id); step (connector, binding, criteria set, status, cursor, counts, redacted error) | Run statuses: `queued`, `running`, `waiting_for_human`, `succeeded`, `partial`, `failed`, `cancelled`. Step statuses: `queued`, `running`, `waiting_for_human`, `succeeded`, `needs_human`, `skipped` (with a reason such as `handyman_unreachable` or `compartment_missing`), `failed`, `cancelled` |
 | `connector_bindings` | id, connector id and version, settings, secret refs, health (`ok`, `degraded`, `needs_human`, `auth_expired`, `failing`, `disabled`) | One binding per connector and account. For a browser connector the health mirrors what the Handyman compartment last reported |
 | `human_steps` | id, binding or compartment, run step, reason, detail, what the user should open, opened_at, notified_at, resolved_at, resolution | **The one needs-human signal** (section 7.4) |
 | `ai_calls` | id, purpose, backend, model, input refs, prompt sha256, output, validation result, duration, status, at | Every model call, kept for audit |
@@ -344,7 +344,7 @@ Every piece of job-seeker's work that touches a website through a browser runs a
 
 ### 7.2 The endpoint and the connector adapter
 
-Handyman serves its compartments on a local-only endpoint, the same shape the predecessor's `linkedin/client.py` already uses for LinkedIn: a UNIX socket with mode 0600 under Handyman's user-data directory on macOS and Linux, a named pipe on Windows, speaking newline-delimited JSON-RPC. The endpoint is resolved from Handyman's user-data directory, with an environment override for tests.
+Handyman serves its compartments on a local-only endpoint, the same shape the predecessor's `linkedin/client.py` already uses for LinkedIn: a UNIX socket with mode 0600 at `<handyman data folder>/endpoint/handyman.sock` on macOS and Linux, a named pipe on Windows, speaking newline-delimited JSON-RPC. The endpoint is resolved from Handyman's data folder, with an environment override for tests. It is not the predecessor's endpoint: `linkedin/client.py` still resolves the vendored `linkedin-mcp` app's own socket (`<user-data>/linkedin-mcp/run/mcp.sock`), and keeps doing so until it is switched to Handyman's endpoint or retired at the phase 8 cutover.
 
 - **One client.** The engine has one Handyman client module. It never launches Handyman, never touches a credential, and turns every transport failure or compartment-reported "needs you" into a specific, actionable error - never a raw socket or timeout traceback and never a retry loop.
 - **A browser connector is a thin adapter.** It keeps the connector contract unchanged: it declares `implements: ["jobs.search@1", ...]` in its manifest, and its TypeScript module maps each contract action onto the compartment's actions through `ctx.handyman`. From the engine's side a search on LinkedIn and a search on Adzuna look the same: a contract call that returns `job.posting@1` records. Criteria mapping, `unsupported` reporting and result validation happen in the adapter, exactly as for an API connector.
@@ -355,8 +355,8 @@ Handyman serves its compartments on a local-only endpoint, the same shape the pr
 1. **Sign in, once, in Handyman.** The user signs in to each site by hand in that site's Handyman compartment. job-seeker never sees the credential, and a compartment's sign-in survives restarts because Handyman owns the profile.
 2. **Run.** A run step on a browser connector calls the compartment through the client. Handyman paces the session - one page load at a time, its per-site caps and working hours - and enforces them even if job-seeker asks for more.
 3. **Needs human.** When the compartment reports a sign-in wall, a challenge, two-factor or an unexpected page, the adapter raises `needsHuman`: the step is paused with its cursor, a `human_steps` row is written, the user is notified, and the report's "Waiting for you" section names the site, the reason and the remedy: open Handyman and clear the step in that compartment. job-seeker opens no window itself; the window is Handyman's, and job-seeker types nothing into any browser.
-4. **Resume.** Once the compartment reports the session healthy again, the waiting step resumes from its cursor on the next run. The user can also mark the step done from the CLI after clearing it.
-5. **Time-out and stop.** A step left waiting past its limit ends as `needs_human` and the run as `partial`. While a compartment reports needs-human, later runs skip that connector and list it again under "Waiting for you". Handyman's stop-everything-at-the-first-warning rule applies inside the compartment at all times; job-seeker adds no retry loop against the site.
+4. **Resume.** The step stays `waiting_for_human` within the run while the client polls the compartment's status. Once the compartment reports the session healthy again, before the wait limit, the step resumes from its cursor in the same run. The user can also mark the step done from the CLI after clearing it.
+5. **Time-out and stop.** The wait limit is 10 minutes for a run started from MCP or the CLI, and 12 hours or the same schedule's next run, whichever comes first, for a scheduled run. A step left waiting past its limit ends as `needs_human` and the run as `partial`; the step resumes from its cursor on the next run once the compartment is healthy. While a compartment reports needs-human, later runs skip that connector and list it again under "Waiting for you". Handyman's stop-everything-at-the-first-warning rule applies inside the compartment at all times; job-seeker adds no retry loop against the site.
 
 If the user is away, the notification and Handyman's own surface are waiting when they return; nothing proceeds until they act.
 
@@ -373,7 +373,7 @@ If the user is away, the notification and Handyman's own surface are waiting whe
 
 The browser guards are Handyman's, applied to every compartment: the user's real sign-in per site, trusted input only, per-site rate caps and working hours, no evasion, and stop-everything-at-the-first-warning. job-seeker never solves a CAPTCHA, types a credential or answers a security check - it has no browser to do it with. job-seeker's own rules still apply to what crosses the endpoint: untrusted text passes `posting_guard`, and connectors make no AI calls (section 6.5).
 
-The `linkedin` connector is the first browser connector, an adapter over Handyman's LinkedIn compartment. The compartment reuses the vendored app's extractors, URL builders, pacing defaults, result cache, failed-parse captures and the "LinkedIn needs you" detection; the predecessor keeps reading LinkedIn through the same compartment (`linkedin/client.py`) until phase 8 of the execution plan. It uses the user's main account.
+The `linkedin` connector is the first browser connector, an adapter over Handyman's LinkedIn compartment. The compartment reuses the vendored app's extractors, URL builders, pacing defaults, result cache, failed-parse captures and the "LinkedIn needs you" detection; until phase 8 of the execution plan the predecessor keeps reading LinkedIn through the vendored app at its own endpoint (`linkedin/client.py`, section 7.2), with its own pacer. It uses the user's main account.
 
 | Need | Action | Notes |
 |---|---|---|
@@ -407,9 +407,9 @@ The diff tells the user that LinkedIn may share some profile changes with their 
 
 A scheduled, unattended run that needs a browser source requires Handyman to be running (open or in the background). job-seeker treats an unreachable endpoint as a **skipped source, never a failure and never a retry loop**:
 
-1. **Probe once per step.** Before a browser step, the client probes the endpoint. If Handyman is not running, or the compartment is absent, the step is marked `skipped` with the reason `handyman_unreachable` and the run moves on.
+1. **Probe once per step.** Before a browser step, the client probes the endpoint. If Handyman is not running, the step is marked `skipped` with the reason `handyman_unreachable`; if Handyman is running but does not serve that site's compartment, the reason is `compartment_missing`. Either way the run moves on.
 2. **API sources still run.** A skipped browser step does not hold up the rest of the run: Gmail alerts, Adzuna, `web-posting` and every other API connector execute normally, and the run finishes `partial` when something was skipped.
-3. **The report says so plainly.** The skipped sources are named in the report's connector section and summary, with one line of remedy: start Handyman and re-run, or wait for the next scheduled run. `status` and the pipeline page show the same, so the gap is visible without opening the report.
+3. **The report says so plainly.** The skipped sources are named in the report's connector section and summary, with one line of remedy: for `handyman_unreachable`, start Handyman and re-run, or wait for the next scheduled run; for `compartment_missing`, add or update that site's compartment in Handyman, or disable the binding until Handyman ships it. `status` and the pipeline page show the same, so the gap is visible without opening the report.
 4. **No catch-up storm.** The next scheduled run probes again and runs the browser steps if Handyman is back; a missed schedule still fires once, not once per missed slot (section 10.1). Nothing queues up against a site.
 
 A run started by hand from MCP or the CLI behaves the same way, but the tool's answer says immediately that Handyman is not running, so the user can start it and ask again.
@@ -521,7 +521,7 @@ Every run writes `reports/<yyyy>/<mm>/<run_id>.json` (`report@1`) and a matching
            "started_at": "2026-12-01T07:00:04Z", "finished_at": "2026-12-01T07:09:41Z", "status": "partial" },
   "profile_version": 7,
   "criteria": [ { "id": "crs_product_remote", "name": "Product leadership, remote", "version": 3 } ],
-  "summary": { "new_jobs": 12, "merged_duplicates": 9, "connectors_failed": 0, "waiting_for_you": 1, "pending_approvals": 2 },
+  "summary": { "new_jobs": 12, "merged_duplicates": 9, "connectors_failed": 0, "connectors_skipped": 1, "waiting_for_you": 1, "pending_approvals": 2 },
   "new_jobs": [ { "job_id": "job_8f2c", "title": "Director of Product", "company": "Acme Analytics (fictional)",
                   "sources": ["adzuna", "linkedin-alerts"], "score": 78, "score_method": "rule" } ],
   "top_matches": [ { "job_id": "job_8f2c", "score": 78, "score_method": "rule", "band": "Strong Fit",
@@ -530,7 +530,9 @@ Every run writes `reports/<yyyy>/<mm>/<run_id>.json` (`report@1`) and a matching
                               "application_changes": [], "criteria_changes": ["chg_0042 approved"] },
   "connectors": [ { "connector": "adzuna", "status": "ok", "records": 31 },
                   { "connector": "linkedin", "status": "needs_human", "records": 0, "detail": "challenge",
-                    "page_loads_today": 112, "page_load_cap": 200 } ],
+                    "page_loads_today": 112, "page_load_cap": 200 },
+                  { "connector": "naukri", "status": "skipped", "records": 0, "detail": "handyman_unreachable",
+                    "how": "start Handyman and re-run, or wait for the next scheduled run" } ],
   "waiting_for_you": [ { "human_step_id": "hs_0007", "service": "linkedin", "reason": "challenge",
                          "since": "2026-12-01T07:03:12Z", "how": "open Handyman and clear the step in the LinkedIn compartment" } ],
   "pending_approvals": [ { "approval_id": "apr_0043", "kind": "criteria_change", "summary": "Add the title 'Group Product Manager'", "requested_by": "research:res_0011" } ]
@@ -567,7 +569,7 @@ Paths are relative to the repository root. **Port** means rewrite in TypeScript 
 | `tailor/tools/latex_templates/cover.*` | Reshape | The "why me" note's template |
 | `tailor/tools/export_resume.py` (pandoc and .docx route) | Port | The `.docx` output of `resume_render`, when pandoc is present |
 | `tailor/tailor.md`, `tailor/agents/resume-reviewer.md` | Reshape | MCP prompt `tailor_resume`, which includes the reviewer's checks, and the adapter's tailoring instructions |
-| `linkedin/app/src/extractors.js`, `urls.js`, `pacing.js`, `cache.js`, `format.js`, `capture.js` and their tests | Handyman's | The LinkedIn compartment's extraction, pacing, cache and captures. The compartment already serves the predecessor's LinkedIn ingest; job-seeker's `linkedin` connector calls the same compartment actions |
+| `linkedin/app/src/extractors.js`, `urls.js`, `pacing.js`, `cache.js`, `format.js`, `capture.js` and their tests | Handyman's | The LinkedIn compartment's extraction, pacing, cache and captures. The vendored copy keeps serving the predecessor's LinkedIn ingest at its own endpoint until phase 8; job-seeker's `linkedin` connector calls the matching actions on Handyman's compartment |
 | `linkedin/app/src/main.js`, `server.js`, `paths.js`, `bin/linkedin-mcp.js` | Handyman's | The compartment shell and its local endpoint. job-seeker builds no browser host and no replacement for them |
 | `linkedin/client.py`, `linkedin/source.py` | Reshape | The engine's Handyman client (the endpoint client, one per compartment) and the `linkedin` connector's criteria mapping, in TypeScript |
 | `mcp/server.py` | Retire | Replaced by the TypeScript SDK server. Its tests become the protocol error-path spec |
