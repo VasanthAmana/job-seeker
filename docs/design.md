@@ -654,7 +654,7 @@ Browser profiles, page captures and their limits are Handyman's, in Handyman's o
 
 ### 12.6 Install
 
-1. `npm install -g` the job-seeker package. Node.js 22 or later is the only prerequisite.
+1. `npm install -g` the job-seeker package. Node.js 22.13 or later (section 3) is the only prerequisite.
 2. `job-seeker setup`, which is idempotent and asks before each step:
    - creates the data directory and `config.json`, and refuses one inside a git work tree;
    - checks that Handyman is installed and its endpoint is reachable, and reports the compartments it serves; browser sources are skipped until it is (section 7.7);
