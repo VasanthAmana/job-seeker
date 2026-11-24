@@ -1,0 +1,70 @@
+{
+  "$id": "jobseeker:engine/v1/applications_list",
+  "title": "applications_list",
+  "input": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "$ref": "_common.json#/$defs/ApplicationState"
+      }
+    },
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "count": {
+        "type": "integer"
+      },
+      "counts": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "integer"
+        }
+      },
+      "results": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "job_id": {
+              "type": "string"
+            },
+            "state": {
+              "$ref": "_common.json#/$defs/ApplicationState"
+            },
+            "title": {
+              "type": "string"
+            },
+            "company": {
+              "type": "string"
+            },
+            "url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "created_at": {
+              "type": "string"
+            },
+            "updated_at": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "job_id",
+            "state",
+            "title",
+            "company"
+          ]
+        }
+      }
+    },
+    "required": [
+      "count",
+      "counts",
+      "results"
+    ]
+  }
+}

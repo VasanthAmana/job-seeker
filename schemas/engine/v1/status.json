@@ -1,0 +1,179 @@
+{
+  "$id": "jobseeker:engine/v1/status",
+  "title": "status",
+  "input": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "version": {
+        "type": "string",
+        "description": "The job-seeker package version."
+      },
+      "engine_api": {
+        "type": "integer",
+        "description": "The Engine API level (design 4)."
+      },
+      "schema_version": {
+        "type": "integer"
+      },
+      "data_dir": {
+        "type": "string"
+      },
+      "jobs": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer"
+          },
+          "by_status": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "sightings": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "by_status",
+          "sightings"
+        ]
+      },
+      "applications": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer"
+          },
+          "by_state": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "by_state"
+        ]
+      },
+      "profile": {
+        "type": "object",
+        "properties": {
+          "current_version": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "sources": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "current_version",
+          "sources"
+        ]
+      },
+      "waiting_for_you": {
+        "type": "array",
+        "items": {
+          "$ref": "_common.json#/$defs/HumanStep"
+        }
+      },
+      "pending_approvals": {
+        "type": "integer"
+      },
+      "service": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "ai_adapter": {
+        "type": "object",
+        "properties": {
+          "backend": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "backend"
+        ]
+      },
+      "connectors": {
+        "type": "object",
+        "properties": {
+          "bindings": {
+            "type": "integer"
+          },
+          "failing": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "bindings",
+          "failing"
+        ]
+      },
+      "legacy_import": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "at": {
+                "type": "string"
+              },
+              "seen_jobs": {
+                "type": "integer"
+              },
+              "tracker_rows": {
+                "type": "integer"
+              },
+              "shortlist": {
+                "type": "integer"
+              }
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "version",
+      "engine_api",
+      "schema_version",
+      "data_dir",
+      "jobs",
+      "applications",
+      "profile",
+      "waiting_for_you",
+      "pending_approvals",
+      "service",
+      "ai_adapter",
+      "connectors"
+    ]
+  }
+}

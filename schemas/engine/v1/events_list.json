@@ -1,0 +1,72 @@
+{
+  "$id": "jobseeker:engine/v1/events_list",
+  "title": "events_list",
+  "input": {
+    "type": "object",
+    "properties": {
+      "after": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Return events after this cursor (default 0)."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 1000
+      }
+    },
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "after": {
+        "type": "integer"
+      },
+      "next_cursor": {
+        "type": "integer"
+      },
+      "results": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "cursor": {
+              "type": "integer"
+            },
+            "type": {
+              "type": "string"
+            },
+            "entity": {
+              "type": "string"
+            },
+            "entity_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "payload": {
+              "type": "object"
+            },
+            "at": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "cursor",
+            "type",
+            "entity",
+            "payload",
+            "at"
+          ]
+        }
+      }
+    },
+    "required": [
+      "after",
+      "next_cursor",
+      "results"
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "$id": "jobseeker:engine/v1/profile_save_version",
+  "title": "profile_save_version",
+  "input": {
+    "type": "object",
+    "properties": {
+      "document": {
+        "$ref": "_common.json#/$defs/ProfileDocument"
+      },
+      "note": {
+        "type": "string",
+        "maxLength": 500
+      }
+    },
+    "required": [
+      "document"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "version": {
+        "type": "integer"
+      },
+      "parent": {
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "claims": {
+        "type": "integer"
+      },
+      "document": {
+        "$ref": "_common.json#/$defs/ProfileDocument"
+      }
+    },
+    "required": [
+      "version",
+      "parent",
+      "claims",
+      "document"
+    ]
+  }
+}

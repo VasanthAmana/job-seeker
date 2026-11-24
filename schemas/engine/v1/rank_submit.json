@@ -1,0 +1,150 @@
+{
+  "$id": "jobseeker:engine/v1/rank_submit",
+  "title": "rank_submit",
+  "input": {
+    "type": "object",
+    "properties": {
+      "scores": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 100,
+        "items": {
+          "type": "object",
+          "properties": {
+            "job_id": {
+              "$ref": "_common.json#/$defs/JobId"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "scored",
+                "expired",
+                "unreachable"
+              ],
+              "description": "Default scored."
+            },
+            "scores": {
+              "type": "object",
+              "description": "One 0-100 score per rubric dimension (ranking.weights in config.json: domain, leadership, behavioral, career by default).",
+              "additionalProperties": {
+                "type": [
+                  "number",
+                  "boolean",
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "location_verdict": {
+              "type": "string",
+              "description": "PASS, FAIL or FLAG. FAIL vetoes."
+            },
+            "seniority_gate": {
+              "type": "string",
+              "description": "PASS, FAIL or FLAG. FAIL vetoes."
+            },
+            "engineering_role": {
+              "description": "true vetoes (an engineering individual-contributor role)."
+            },
+            "reason": {
+              "type": "string",
+              "description": "One line, shown with the score."
+            },
+            "strengths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 10
+            },
+            "gaps": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 10
+            },
+            "guard": {
+              "type": "string",
+              "description": "The posting guard's verdict line you saw, if any."
+            },
+            "deadline": {
+              "type": "string",
+              "description": "YYYY-MM-DD, when the posting states one."
+            },
+            "fetch_error": {
+              "type": "string",
+              "description": "For status unreachable: what went wrong."
+            }
+          },
+          "required": [
+            "job_id"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "scores"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "ranked": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "vetoed": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "expired": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "unreachable": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "gave_up": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "errors": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "job_id": {},
+            "error": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "error"
+          ]
+        }
+      }
+    },
+    "required": [
+      "ranked",
+      "vetoed",
+      "expired",
+      "unreachable",
+      "gave_up",
+      "errors"
+    ]
+  }
+}

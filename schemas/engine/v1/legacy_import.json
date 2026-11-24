@@ -1,0 +1,173 @@
+{
+  "$id": "jobseeker:engine/v1/legacy_import",
+  "title": "legacy_import",
+  "input": {
+    "type": "object",
+    "properties": {
+      "from": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The predecessor's folder (holding state/ and tracker.csv)."
+      },
+      "seen_jobs": {
+        "type": "string",
+        "description": "Override: path of seen_jobs.json."
+      },
+      "last_run": {
+        "type": "string",
+        "description": "Override: path of last_run.json."
+      },
+      "tracker": {
+        "type": "string",
+        "description": "Override: path of tracker.csv."
+      }
+    },
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "sources": {
+        "type": "object",
+        "properties": {
+          "seen_jobs": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_run": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tracker": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "seen_jobs",
+          "last_run",
+          "tracker"
+        ]
+      },
+      "seen_jobs": {
+        "type": "object",
+        "properties": {
+          "read": {
+            "type": "integer"
+          },
+          "imported": {
+            "type": "integer"
+          },
+          "already_imported": {
+            "type": "integer"
+          },
+          "merged_duplicates": {
+            "type": "integer"
+          },
+          "invalid": {
+            "type": "integer",
+            "description": "Entries without a title or company, recorded and skipped."
+          }
+        },
+        "required": [
+          "read",
+          "imported",
+          "already_imported",
+          "merged_duplicates"
+        ]
+      },
+      "tracker": {
+        "type": "object",
+        "properties": {
+          "read": {
+            "type": "integer"
+          },
+          "imported": {
+            "type": "integer"
+          },
+          "already_imported": {
+            "type": "integer"
+          },
+          "matched_jobs": {
+            "type": "integer"
+          },
+          "new_jobs": {
+            "type": "integer"
+          },
+          "unmapped_statuses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "read",
+          "imported",
+          "already_imported",
+          "matched_jobs",
+          "new_jobs",
+          "unmapped_statuses"
+        ]
+      },
+      "shortlist": {
+        "type": "object",
+        "properties": {
+          "read": {
+            "type": "integer"
+          },
+          "imported": {
+            "type": "integer"
+          },
+          "already_imported": {
+            "type": "integer"
+          },
+          "skipped_with_application": {
+            "type": "integer"
+          },
+          "unknown_keys": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "read",
+          "imported",
+          "already_imported",
+          "skipped_with_application",
+          "unknown_keys"
+        ]
+      },
+      "audit": {
+        "type": "object"
+      },
+      "totals": {
+        "type": "object",
+        "properties": {
+          "jobs": {
+            "type": "integer"
+          },
+          "applications": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "jobs",
+          "applications"
+        ]
+      }
+    },
+    "required": [
+      "sources",
+      "seen_jobs",
+      "tracker",
+      "shortlist",
+      "totals"
+    ]
+  }
+}

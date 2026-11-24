@@ -1,0 +1,56 @@
+{
+  "$id": "jobseeker:engine/v1/pipeline_page",
+  "title": "pipeline_page",
+  "input": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "description": "The absolute path of the generated page."
+      },
+      "generated_at": {
+        "type": "string"
+      },
+      "summary": {
+        "type": "object",
+        "properties": {
+          "applications": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "top_matches": {
+            "type": "integer"
+          },
+          "follow_ups_due": {
+            "type": "integer"
+          },
+          "waiting_for_you": {
+            "type": "integer"
+          },
+          "pending_approvals": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "applications",
+          "top_matches",
+          "follow_ups_due",
+          "waiting_for_you",
+          "pending_approvals"
+        ]
+      }
+    },
+    "required": [
+      "path",
+      "generated_at",
+      "summary"
+    ]
+  }
+}

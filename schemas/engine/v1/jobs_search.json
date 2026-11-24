@@ -1,0 +1,45 @@
+{
+  "$id": "jobseeker:engine/v1/jobs_search",
+  "title": "jobs_search",
+  "input": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Text to match against title, company and location (case-insensitive)."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 200
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string"
+      },
+      "count": {
+        "type": "integer"
+      },
+      "results": {
+        "type": "array",
+        "items": {
+          "$ref": "_common.json#/$defs/JobSummary"
+        }
+      }
+    },
+    "required": [
+      "query",
+      "count",
+      "results"
+    ]
+  }
+}
