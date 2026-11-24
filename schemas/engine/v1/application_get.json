@@ -1,0 +1,100 @@
+{
+  "$id": "jobseeker:engine/v1/application_get",
+  "title": "application_get",
+  "input": {
+    "type": "object",
+    "properties": {
+      "job_id": {
+        "$ref": "_common.json#/$defs/JobId"
+      }
+    },
+    "required": [
+      "job_id"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "allOf": [
+      {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "_common.json#/$defs/ApplicationState"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "state",
+          "title",
+          "company"
+        ]
+      },
+      {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "from_state": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "to_state": {
+                  "type": "string"
+                },
+                "at": {
+                  "type": "string"
+                },
+                "reported_by": {
+                  "type": "string"
+                },
+                "channel": {
+                  "type": "string"
+                },
+                "note": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "to_state",
+                "at"
+              ]
+            }
+          }
+        },
+        "required": [
+          "events"
+        ]
+      }
+    ]
+  }
+}

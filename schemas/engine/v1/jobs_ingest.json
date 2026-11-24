@@ -1,0 +1,81 @@
+{
+  "$id": "jobseeker:engine/v1/jobs_ingest",
+  "title": "jobs_ingest",
+  "input": {
+    "type": "object",
+    "properties": {
+      "connector": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9:._-]{0,63}$"
+      },
+      "run_id": {
+        "type": "string"
+      },
+      "records": {
+        "type": "array",
+        "maxItems": 1000,
+        "items": {
+          "type": "object",
+          "description": "A job.posting@1 record."
+        }
+      }
+    },
+    "required": [
+      "connector",
+      "records"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "added": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "merged": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "already_seen": {
+        "type": "integer"
+      },
+      "already_applied": {
+        "type": "integer"
+      },
+      "repeated_in_batch": {
+        "type": "integer"
+      },
+      "invalid": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": "integer"
+            },
+            "error": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "index",
+            "error"
+          ]
+        }
+      }
+    },
+    "required": [
+      "added",
+      "merged",
+      "already_seen",
+      "already_applied",
+      "repeated_in_batch",
+      "invalid"
+    ]
+  }
+}

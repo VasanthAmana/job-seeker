@@ -1,0 +1,36 @@
+{
+  "$id": "jobseeker:engine/v1/profile_source_get",
+  "title": "profile_source_get",
+  "input": {
+    "type": "object",
+    "properties": {
+      "source_id": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "source_id"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "allOf": [
+      {
+        "$ref": "_common.json#/$defs/SourceSummary"
+      },
+      {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ]
+      }
+    ]
+  }
+}

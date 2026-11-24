@@ -1,0 +1,78 @@
+{
+  "$id": "jobseeker:engine/v1/profile_get",
+  "title": "profile_get",
+  "input": {
+    "type": "object",
+    "properties": {
+      "version": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "Default: the current version."
+      }
+    },
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "version": {
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "current_version": {
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "parent": {
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "created_by": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "note": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "created_at": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "document": {
+        "anyOf": [
+          {
+            "$ref": "_common.json#/$defs/ProfileDocument"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "sources": {
+        "type": "array",
+        "items": {
+          "$ref": "_common.json#/$defs/SourceSummary"
+        }
+      }
+    },
+    "required": [
+      "version",
+      "current_version",
+      "document",
+      "sources"
+    ]
+  }
+}

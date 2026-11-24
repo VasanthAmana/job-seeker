@@ -1,0 +1,55 @@
+{
+  "$id": "jobseeker:engine/v1/application_set_state",
+  "title": "application_set_state",
+  "input": {
+    "type": "object",
+    "properties": {
+      "job_id": {
+        "$ref": "_common.json#/$defs/JobId"
+      },
+      "state": {
+        "$ref": "_common.json#/$defs/ApplicationState"
+      },
+      "note": {
+        "type": "string",
+        "maxLength": 500,
+        "description": "Optional context, in the user's words."
+      }
+    },
+    "required": [
+      "job_id",
+      "state"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "job_id": {
+        "type": "string"
+      },
+      "from_state": {
+        "anyOf": [
+          {
+            "$ref": "_common.json#/$defs/ApplicationState"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "state": {
+        "$ref": "_common.json#/$defs/ApplicationState"
+      },
+      "changed": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "job_id",
+      "from_state",
+      "state",
+      "changed"
+    ]
+  }
+}

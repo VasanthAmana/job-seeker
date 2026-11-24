@@ -1,0 +1,49 @@
+{
+  "$id": "jobseeker:engine/v1/profile_import_source",
+  "title": "profile_import_source",
+  "input": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The pasted text: a resume or other free text from the user."
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "resume_text",
+          "free_text"
+        ],
+        "description": "Default free_text."
+      },
+      "title": {
+        "type": "string",
+        "maxLength": 200
+      }
+    },
+    "required": [
+      "text"
+    ],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "allOf": [
+      {
+        "$ref": "_common.json#/$defs/SourceSummary"
+      },
+      {
+        "type": "object",
+        "properties": {
+          "existing": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "existing"
+        ]
+      }
+    ]
+  }
+}
